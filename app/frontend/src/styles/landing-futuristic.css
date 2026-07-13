@@ -1,0 +1,697 @@
+/* =========================================================
+   ClearSpec AI — Futuristic public landing page
+   ========================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.cs-landing-page {
+  --cs-landing-pointer-x: 50%;
+  --cs-landing-pointer-y: 50%;
+
+  isolation: isolate;
+}
+
+/* Mouse-following illumination */
+
+.cs-landing-pointer-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      600px circle at var(--cs-landing-pointer-x)
+        var(--cs-landing-pointer-y),
+      rgba(34, 211, 238, 0.12),
+      rgba(59, 130, 246, 0.07) 25%,
+      rgba(99, 102, 241, 0.04) 44%,
+      transparent 70%
+    );
+
+  mix-blend-mode: screen;
+}
+
+/* Background */
+
+.cs-landing-grid {
+  opacity: 0.2;
+
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.11) 1px, transparent 1px);
+
+  background-size: 46px 46px;
+  animation: csLandingGridDrift 28s linear infinite;
+}
+
+.cs-landing-aurora {
+  background:
+    radial-gradient(
+      circle at 14% 18%,
+      rgba(6, 182, 212, 0.11),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 83% 20%,
+      rgba(37, 99, 235, 0.13),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 55% 75%,
+      rgba(124, 58, 237, 0.12),
+      transparent 30%
+    );
+
+  animation: csLandingAurora 15s ease-in-out infinite alternate;
+}
+
+.cs-landing-stars {
+  opacity: 0.45;
+
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.74) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(103, 232, 249, 0.66) 0 1px, transparent 1.5px);
+
+  background-position:
+    24px 38px,
+    156px 110px;
+
+  background-size:
+    220px 190px,
+    310px 260px;
+
+  animation: csLandingStars 42s linear infinite;
+}
+
+/* Navigation */
+
+.cs-landing-nav {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+}
+
+.cs-landing-logo-link {
+  filter: drop-shadow(0 0 18px rgba(34, 211, 238, 0.18));
+
+  transition:
+    filter 220ms ease,
+    transform 220ms ease;
+}
+
+.cs-landing-logo-link:hover {
+  filter: drop-shadow(0 0 28px rgba(34, 211, 238, 0.38));
+  transform: translateY(-1px);
+}
+
+.cs-landing-nav-link {
+  position: relative;
+  padding: 8px 0;
+
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgb(148 163 184);
+
+  transition: color 220ms ease;
+}
+
+.cs-landing-nav-link::after {
+  content: "";
+
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 0;
+
+  height: 1px;
+  background: rgb(103 232 249);
+
+  transition: right 220ms ease;
+}
+
+.cs-landing-nav-link:hover {
+  color: rgb(165 243 252);
+}
+
+.cs-landing-nav-link:hover::after {
+  right: 0;
+}
+
+/* Buttons */
+
+.cs-landing-primary-button,
+.cs-landing-hero-primary {
+  position: relative;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      100deg,
+      rgb(6 182 212),
+      rgb(37 99 235),
+      rgb(124 58 237)
+    );
+
+  box-shadow:
+    0 0 28px rgba(37, 99, 235, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  transition:
+    filter 220ms ease,
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.cs-landing-primary-button::before,
+.cs-landing-hero-primary::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      100deg,
+      transparent,
+      rgba(255, 255, 255, 0.22),
+      transparent
+    );
+
+  transform: translateX(-120%);
+  transition: transform 500ms ease;
+}
+
+.cs-landing-primary-button:hover,
+.cs-landing-hero-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 0 42px rgba(37, 99, 235, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.cs-landing-primary-button:hover::before,
+.cs-landing-hero-primary:hover::before {
+  transform: translateX(120%);
+}
+
+/* Hero product console */
+
+.cs-landing-console {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.04),
+    0 0 60px rgba(14, 116, 144, 0.2),
+    0 36px 100px rgba(0, 0, 0, 0.4);
+
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease,
+    transform 260ms ease;
+}
+
+.cs-landing-console:hover {
+  border-color: rgba(103, 232, 249, 0.48);
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.07),
+    0 0 82px rgba(14, 165, 233, 0.25),
+    0 42px 110px rgba(0, 0, 0, 0.44);
+}
+
+/* Hero reactor */
+
+.cs-landing-hero-reactor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.cs-landing-hero-reactor-glow {
+  position: absolute;
+  inset: 24%;
+
+  border-radius: 9999px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(240, 253, 250, 0.94) 0%,
+      rgba(103, 232, 249, 0.42) 10%,
+      rgba(59, 130, 246, 0.2) 35%,
+      rgba(99, 102, 241, 0.08) 60%,
+      transparent 78%
+    );
+
+  filter: blur(28px);
+  animation: csLandingReactorPulse 4s ease-in-out infinite;
+}
+
+.cs-landing-hero-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 390px;
+  height: 390px;
+
+  border-radius: 9999px;
+  border: 1px solid rgba(103, 232, 249, 0.22);
+
+  transform-style: preserve-3d;
+}
+
+.cs-landing-hero-ring-a {
+  animation: csLandingRingA 14s linear infinite;
+}
+
+.cs-landing-hero-ring-b {
+  width: 330px;
+  height: 330px;
+
+  border-color: rgba(96, 165, 250, 0.28);
+  animation: csLandingRingB 10s linear infinite reverse;
+}
+
+.cs-landing-hero-ring-c {
+  width: 270px;
+  height: 270px;
+
+  border-color: rgba(167, 139, 250, 0.32);
+  animation: csLandingRingC 8s linear infinite;
+}
+
+/* Hero 3D cube */
+
+.cs-landing-hero-cube-scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 142px;
+  height: 142px;
+
+  transform: translate(-50%, -50%);
+  perspective: 950px;
+}
+
+.cs-landing-hero-cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  transform-style: preserve-3d;
+
+  animation:
+    csLandingCubeRotate 11s linear infinite,
+    csLandingCubeBrightness 4s ease-in-out infinite;
+}
+
+.cs-landing-cube-face {
+  position: absolute;
+  inset: 14px;
+
+  border: 1px solid rgba(165, 243, 252, 0.72);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(34, 211, 238, 0.13),
+      rgba(37, 99, 235, 0.24),
+      rgba(139, 92, 246, 0.12)
+    );
+
+  box-shadow:
+    inset 0 0 28px rgba(34, 211, 238, 0.18),
+    0 0 18px rgba(59, 130, 246, 0.2);
+}
+
+.cs-landing-cube-front {
+  transform: translateZ(56px);
+}
+
+.cs-landing-cube-back {
+  transform: rotateY(180deg) translateZ(56px);
+}
+
+.cs-landing-cube-right {
+  transform: rotateY(90deg) translateZ(56px);
+}
+
+.cs-landing-cube-left {
+  transform: rotateY(-90deg) translateZ(56px);
+}
+
+.cs-landing-cube-top {
+  transform: rotateX(90deg) translateZ(56px);
+}
+
+.cs-landing-cube-bottom {
+  transform: rotateX(-90deg) translateZ(56px);
+}
+
+.cs-landing-hero-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 55px;
+  height: 55px;
+
+  transform: translate(-50%, -50%) rotate(45deg);
+
+  border: 1px solid rgba(236, 254, 255, 0.95);
+
+  background:
+    radial-gradient(
+      circle,
+      white 0%,
+      rgba(165, 243, 252, 0.94) 13%,
+      rgba(59, 130, 246, 0.76) 42%,
+      rgba(99, 102, 241, 0.24) 68%,
+      transparent 100%
+    );
+
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.92),
+    0 0 30px rgba(34, 211, 238, 0.84),
+    0 0 66px rgba(59, 130, 246, 0.7);
+
+  animation: csLandingCorePulse 2.5s ease-in-out infinite;
+}
+
+.cs-landing-hero-core-inner {
+  position: absolute;
+  inset: 27%;
+
+  background: white;
+
+  box-shadow:
+    0 0 11px white,
+    0 0 27px rgba(103, 232, 249, 1);
+
+  animation: csLandingCoreInner 1.3s ease-in-out infinite alternate;
+}
+
+.cs-landing-orbit-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 6px;
+  height: 6px;
+
+  border-radius: 9999px;
+  background: white;
+
+  box-shadow:
+    0 0 8px white,
+    0 0 18px rgba(34, 211, 238, 0.95);
+}
+
+.cs-landing-orbit-particle-a {
+  animation: csLandingParticleA 5s linear infinite;
+}
+
+.cs-landing-orbit-particle-b {
+  animation: csLandingParticleB 7s linear infinite reverse;
+}
+
+.cs-landing-orbit-particle-c {
+  animation: csLandingParticleC 9s linear infinite;
+}
+
+/* Cards */
+
+.cs-landing-capability-card,
+.cs-landing-principle-card,
+.cs-landing-workflow-row {
+  transition:
+    border-color 240ms ease,
+    background-color 240ms ease,
+    box-shadow 240ms ease,
+    transform 240ms ease;
+}
+
+.cs-landing-capability-card:hover,
+.cs-landing-principle-card:hover,
+.cs-landing-workflow-row:hover {
+  border-color: rgba(103, 232, 249, 0.42);
+  background-color: rgba(6, 19, 38, 0.78);
+
+  box-shadow:
+    0 0 42px rgba(14, 116, 144, 0.12),
+    0 18px 54px rgba(0, 0, 0, 0.18);
+
+  transform: translateY(-3px);
+}
+
+/* Final CTA */
+
+.cs-landing-final-cta {
+  position: relative;
+
+  box-shadow:
+    0 0 70px rgba(14, 116, 144, 0.16),
+    0 36px 100px rgba(0, 0, 0, 0.32);
+}
+
+/* Animations */
+
+@keyframes csLandingGridDrift {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(46px, 46px);
+  }
+}
+
+@keyframes csLandingAurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.86;
+  }
+
+  50% {
+    transform: translate3d(28px, -16px, 0) scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(-20px, 18px, 0) scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+@keyframes csLandingStars {
+  from {
+    background-position:
+      24px 38px,
+      156px 110px;
+  }
+
+  to {
+    background-position:
+      244px 228px,
+      466px 370px;
+  }
+}
+
+@keyframes csLandingReactorPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.84);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes csLandingRingA {
+  from {
+    transform: translate(-50%, -50%) rotateX(67deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotateX(67deg) rotateZ(360deg);
+  }
+}
+
+@keyframes csLandingRingB {
+  from {
+    transform: translate(-50%, -50%) rotateY(69deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotateY(69deg) rotateZ(360deg);
+  }
+}
+
+@keyframes csLandingRingC {
+  from {
+    transform:
+      translate(-50%, -50%)
+      rotateX(55deg)
+      rotateY(48deg)
+      rotateZ(0deg);
+  }
+
+  to {
+    transform:
+      translate(-50%, -50%)
+      rotateX(55deg)
+      rotateY(48deg)
+      rotateZ(360deg);
+  }
+}
+
+@keyframes csLandingCubeRotate {
+  0% {
+    transform: rotateX(-22deg) rotateY(0deg) rotateZ(7deg);
+  }
+
+  50% {
+    transform: rotateX(22deg) rotateY(180deg) rotateZ(-7deg);
+  }
+
+  100% {
+    transform: rotateX(-22deg) rotateY(360deg) rotateZ(7deg);
+  }
+}
+
+@keyframes csLandingCubeBrightness {
+  0%,
+  100% {
+    filter:
+      brightness(0.9)
+      drop-shadow(0 0 8px rgba(34, 211, 238, 0.24));
+  }
+
+  50% {
+    filter:
+      brightness(1.45)
+      drop-shadow(0 0 28px rgba(34, 211, 238, 0.74));
+  }
+}
+
+@keyframes csLandingCorePulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(45deg) scale(0.78);
+    opacity: 0.62;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) rotate(225deg) scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes csLandingCoreInner {
+  from {
+    transform: scale(0.68);
+    opacity: 0.58;
+  }
+
+  to {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes csLandingParticleA {
+  from {
+    transform: rotate(0deg) translateX(170px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(170px);
+  }
+}
+
+@keyframes csLandingParticleB {
+  from {
+    transform: rotate(0deg) translateX(135px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(135px);
+  }
+}
+
+@keyframes csLandingParticleC {
+  from {
+    transform: rotate(0deg) translateX(205px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(205px);
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-landing-grid,
+  .cs-landing-aurora,
+  .cs-landing-stars,
+  .cs-landing-hero-reactor-glow,
+  .cs-landing-hero-ring,
+  .cs-landing-hero-cube,
+  .cs-landing-hero-core,
+  .cs-landing-hero-core-inner,
+  .cs-landing-orbit-particle {
+    animation: none !important;
+  }
+
+  .cs-landing-pointer-glow {
+    display: none;
+  }
+
+  .cs-landing-hero-cube {
+    transform: rotateX(-22deg) rotateY(35deg) rotateZ(7deg);
+  }
+}
+
+/* Responsive */
+
+@media (max-width: 1023px) {
+  .cs-landing-hero-reactor {
+    opacity: 0.55;
+  }
+
+  .cs-landing-hero-ring-a {
+    width: 330px;
+    height: 330px;
+  }
+
+  .cs-landing-hero-ring-b {
+    width: 280px;
+    height: 280px;
+  }
+
+  .cs-landing-hero-ring-c {
+    width: 230px;
+    height: 230px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cs-landing-pointer-glow {
+    display: none;
+  }
+
+  .cs-landing-console {
+    border-radius: 20px;
+  }
+}

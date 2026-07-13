@@ -1,0 +1,785 @@
+/* =========================================================
+   ClearSpec AI — Futuristic authentication interface
+   ========================================================= */
+
+.cs-auth-page {
+  --cs-pointer-x: 50%;
+  --cs-pointer-y: 50%;
+  isolation: isolate;
+}
+
+/* Mouse-following illumination */
+
+.cs-auth-pointer-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      540px circle at var(--cs-pointer-x) var(--cs-pointer-y),
+      rgba(34, 211, 238, 0.15),
+      rgba(59, 130, 246, 0.09) 25%,
+      rgba(99, 102, 241, 0.045) 44%,
+      transparent 69%
+    );
+
+  mix-blend-mode: screen;
+}
+
+/* Full-page background */
+
+.cs-auth-grid {
+  opacity: 0.24;
+
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+
+  background-size: 42px 42px;
+  animation: csAuthGridDrift 24s linear infinite;
+}
+
+.cs-auth-aurora {
+  background:
+    radial-gradient(
+      circle at 16% 26%,
+      rgba(6, 182, 212, 0.11),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 78% 18%,
+      rgba(37, 99, 235, 0.13),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 61% 79%,
+      rgba(124, 58, 237, 0.12),
+      transparent 30%
+    );
+
+  animation: csAuthAurora 14s ease-in-out infinite alternate;
+}
+
+.cs-auth-stars {
+  opacity: 0.52;
+
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(103, 232, 249, 0.72) 0 1px, transparent 1.5px);
+
+  background-position:
+    20px 30px,
+    145px 95px;
+
+  background-size:
+    190px 170px,
+    260px 220px;
+
+  animation: csAuthStarsDrift 34s linear infinite;
+}
+
+/* Logo */
+
+.cs-auth-logo-link {
+  filter: drop-shadow(0 0 22px rgba(34, 211, 238, 0.2));
+
+  transition:
+    filter 240ms ease,
+    transform 240ms ease;
+}
+
+.cs-auth-logo-link:hover {
+  filter: drop-shadow(0 0 32px rgba(34, 211, 238, 0.38));
+  transform: translateY(-1px);
+}
+
+.cs-auth-hero-logo {
+  display: block;
+
+  width: clamp(280px, 26vw, 440px);
+  height: auto;
+  max-height: 116px;
+
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Authentication card */
+
+.cs-auth-card-shell {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.05),
+    0 0 48px rgba(14, 116, 144, 0.17),
+    0 34px 92px rgba(0, 0, 0, 0.38);
+
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.cs-auth-card-shell:hover {
+  border-color: rgba(103, 232, 249, 0.56);
+
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.08),
+    0 0 72px rgba(14, 165, 233, 0.22),
+    0 38px 100px rgba(0, 0, 0, 0.42);
+}
+
+/* =========================================================
+   Global charging pulsar reactor
+   ========================================================= */
+
+.cs-auth-reactor {
+  position: absolute;
+  left: 49%;
+  top: 50%;
+  z-index: 3;
+
+  width: clamp(430px, 37vw, 570px);
+  height: clamp(430px, 37vw, 570px);
+
+  align-items: center;
+  justify-content: center;
+
+  transform: translate(-50%, -50%);
+
+  isolation: isolate;
+  perspective: 1100px;
+  pointer-events: none;
+}
+
+.cs-auth-reactor-glow {
+  position: absolute;
+  inset: 22%;
+  z-index: 0;
+
+  border-radius: 9999px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(240, 253, 250, 0.96) 0%,
+      rgba(103, 232, 249, 0.56) 9%,
+      rgba(59, 130, 246, 0.29) 35%,
+      rgba(99, 102, 241, 0.11) 58%,
+      transparent 77%
+    );
+
+  filter: blur(24px);
+  animation: csAuthReactorCharge 3.4s ease-in-out infinite;
+}
+
+/* =========================================================
+   Spherical revolution lines
+   Exactly one attached dot per line
+   ========================================================= */
+
+.cs-auth-orbit-plane {
+  --cs-orbit-scale-y: 0.34;
+  --cs-dot-correction: 2.94;
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+
+  width: 350px;
+  height: 350px;
+
+  transform-style: preserve-3d;
+}
+
+.cs-auth-orbit-line,
+.cs-auth-orbit-runner {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+}
+
+.cs-auth-orbit-line {
+  border: 1px solid rgba(103, 232, 249, 0.32);
+
+  box-shadow:
+    0 0 17px rgba(34, 211, 238, 0.07),
+    inset 0 0 20px rgba(59, 130, 246, 0.05);
+}
+
+.cs-auth-orbit-plane-a {
+  --cs-orbit-scale-y: 0.34;
+  --cs-dot-correction: 2.94;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(0deg)
+    scaleY(var(--cs-orbit-scale-y));
+}
+
+.cs-auth-orbit-plane-b {
+  --cs-orbit-scale-y: 0.4;
+  --cs-dot-correction: 2.5;
+
+  width: 326px;
+  height: 326px;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(90deg)
+    scaleY(var(--cs-orbit-scale-y));
+}
+
+.cs-auth-orbit-plane-c {
+  --cs-orbit-scale-y: 0.55;
+  --cs-dot-correction: 1.82;
+
+  width: 298px;
+  height: 298px;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(35deg)
+    scaleY(var(--cs-orbit-scale-y));
+}
+
+.cs-auth-orbit-runner {
+  transform-origin: center;
+}
+
+.cs-auth-orbit-runner-a {
+  animation: csAuthOrbitForward 7.2s linear infinite;
+}
+
+.cs-auth-orbit-runner-b {
+  animation: csAuthOrbitReverse 9.4s linear infinite;
+}
+
+.cs-auth-orbit-runner-c {
+  animation: csAuthOrbitForward 11.2s linear infinite;
+}
+
+.cs-auth-orbit-dot {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+
+  width: 10px;
+  height: 10px;
+
+  border-radius: 9999px;
+  background: white;
+
+  transform:
+    translateY(-50%)
+    scaleY(var(--cs-dot-correction));
+
+  box-shadow:
+    0 0 7px rgba(255, 255, 255, 1),
+    0 0 15px rgba(165, 243, 252, 1),
+    0 0 29px rgba(34, 211, 238, 0.96),
+    0 0 50px rgba(59, 130, 246, 0.62);
+}
+
+/* =========================================================
+   Pulsar beams crossing the full background
+   ========================================================= */
+
+.cs-auth-beam {
+  --cs-beam-angle: 0deg;
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+
+  width: 2px;
+  height: 240%;
+
+  transform-origin: center;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--cs-beam-angle))
+    scaleY(0.04);
+
+  opacity: 0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(34, 211, 238, 0.02) 16%,
+      rgba(125, 211, 252, 0.84) 43%,
+      white 50%,
+      rgba(96, 165, 250, 0.86) 57%,
+      rgba(34, 211, 238, 0.02) 84%,
+      transparent 100%
+    );
+
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.78),
+    0 0 22px rgba(34, 211, 238, 0.82),
+    0 0 48px rgba(59, 130, 246, 0.56);
+
+  mix-blend-mode: screen;
+  animation: csAuthPulsarBeam 3.4s ease-in-out infinite;
+}
+
+.cs-auth-beam-vertical {
+  --cs-beam-angle: 0deg;
+}
+
+.cs-auth-beam-horizontal {
+  --cs-beam-angle: 90deg;
+  animation-delay: 0.08s;
+}
+
+.cs-auth-beam-diagonal-a {
+  --cs-beam-angle: 45deg;
+  animation-delay: 0.16s;
+}
+
+.cs-auth-beam-diagonal-b {
+  --cs-beam-angle: 135deg;
+  animation-delay: 0.24s;
+}
+
+/* =========================================================
+   Expanding energy waves
+   ========================================================= */
+
+.cs-auth-shockwave {
+  position: absolute;
+  inset: 36%;
+  z-index: 1;
+
+  border-radius: 9999px;
+  border: 1px solid rgba(165, 243, 252, 0.75);
+
+  opacity: 0;
+  animation: csAuthShockwave 3.4s ease-out infinite;
+}
+
+.cs-auth-shockwave-b {
+  animation-delay: 0.42s;
+}
+
+.cs-auth-shockwave-c {
+  animation-delay: 0.84s;
+}
+
+/* =========================================================
+   Rotating 3D cube
+   ========================================================= */
+
+.cs-auth-cube-scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+
+  width: 136px;
+  height: 136px;
+
+  transform: translate(-50%, -50%);
+  perspective: 950px;
+}
+
+.cs-auth-cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  transform-style: preserve-3d;
+
+  animation:
+    csAuthCubeRotate 10s linear infinite,
+    csAuthCubeCharge 3.4s ease-in-out infinite;
+
+  will-change: transform, filter;
+}
+
+.cs-auth-cube-face {
+  position: absolute;
+  inset: 13px;
+
+  border: 1px solid rgba(165, 243, 252, 0.88);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(34, 211, 238, 0.16),
+      rgba(37, 99, 235, 0.28),
+      rgba(139, 92, 246, 0.14)
+    );
+
+  box-shadow:
+    inset 0 0 31px rgba(34, 211, 238, 0.23),
+    0 0 22px rgba(59, 130, 246, 0.28);
+
+  backface-visibility: visible;
+}
+
+.cs-auth-cube-front {
+  transform: translateZ(55px);
+}
+
+.cs-auth-cube-back {
+  transform: rotateY(180deg) translateZ(55px);
+}
+
+.cs-auth-cube-right {
+  transform: rotateY(90deg) translateZ(55px);
+}
+
+.cs-auth-cube-left {
+  transform: rotateY(-90deg) translateZ(55px);
+}
+
+.cs-auth-cube-top {
+  transform: rotateX(90deg) translateZ(55px);
+}
+
+.cs-auth-cube-bottom {
+  transform: rotateX(-90deg) translateZ(55px);
+}
+
+/* =========================================================
+   Charging energy core
+   ========================================================= */
+
+.cs-auth-energy-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 7;
+
+  width: 56px;
+  height: 56px;
+
+  border: 1px solid rgba(236, 254, 255, 0.98);
+
+  background:
+    radial-gradient(
+      circle,
+      white 0%,
+      rgba(165, 243, 252, 0.98) 12%,
+      rgba(59, 130, 246, 0.84) 40%,
+      rgba(99, 102, 241, 0.29) 67%,
+      transparent 100%
+    );
+
+  box-shadow:
+    0 0 13px rgba(255, 255, 255, 0.98),
+    0 0 34px rgba(34, 211, 238, 0.95),
+    0 0 72px rgba(59, 130, 246, 0.82),
+    0 0 122px rgba(99, 102, 241, 0.52);
+
+  animation: csAuthCoreCharge 3.4s ease-in-out infinite;
+}
+
+.cs-auth-energy-core-inner {
+  position: absolute;
+  inset: 27%;
+
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.86);
+
+  box-shadow:
+    0 0 13px white,
+    0 0 31px rgba(103, 232, 249, 1);
+
+  animation: csAuthCoreInner 1.7s ease-in-out infinite alternate;
+}
+
+/* =========================================================
+   Animations
+   ========================================================= */
+
+@keyframes csAuthGridDrift {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(42px, 42px);
+  }
+}
+
+@keyframes csAuthAurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.86;
+  }
+
+  50% {
+    transform: translate3d(22px, -14px, 0) scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(-18px, 16px, 0) scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+@keyframes csAuthStarsDrift {
+  from {
+    background-position:
+      20px 30px,
+      145px 95px;
+  }
+
+  to {
+    background-position:
+      210px 200px,
+      405px 315px;
+  }
+}
+
+@keyframes csAuthOrbitForward {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes csAuthOrbitReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes csAuthCubeRotate {
+  0% {
+    transform: rotateX(-23deg) rotateY(0deg) rotateZ(7deg);
+  }
+
+  50% {
+    transform: rotateX(23deg) rotateY(180deg) rotateZ(-7deg);
+  }
+
+  100% {
+    transform: rotateX(-23deg) rotateY(360deg) rotateZ(7deg);
+  }
+}
+
+@keyframes csAuthCubeCharge {
+  0%,
+  100% {
+    filter:
+      brightness(0.9)
+      drop-shadow(0 0 9px rgba(34, 211, 238, 0.28));
+  }
+
+  60% {
+    filter:
+      brightness(1.36)
+      drop-shadow(0 0 30px rgba(34, 211, 238, 0.84));
+  }
+
+  72% {
+    filter:
+      brightness(2.05)
+      drop-shadow(0 0 56px rgba(96, 165, 250, 1));
+  }
+
+  81% {
+    filter:
+      brightness(1.02)
+      drop-shadow(0 0 15px rgba(34, 211, 238, 0.4));
+  }
+}
+
+@keyframes csAuthCoreCharge {
+  0%,
+  100% {
+    transform:
+      translate(-50%, -50%)
+      rotate(45deg)
+      scale(0.7);
+
+    opacity: 0.56;
+  }
+
+  58% {
+    transform:
+      translate(-50%, -50%)
+      rotate(225deg)
+      scale(1.08);
+
+    opacity: 1;
+  }
+
+  70% {
+    transform:
+      translate(-50%, -50%)
+      rotate(315deg)
+      scale(1.52);
+
+    opacity: 1;
+  }
+
+  79% {
+    transform:
+      translate(-50%, -50%)
+      rotate(405deg)
+      scale(0.82);
+
+    opacity: 0.7;
+  }
+}
+
+@keyframes csAuthCoreInner {
+  from {
+    opacity: 0.54;
+    transform: scale(0.68);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes csAuthPulsarBeam {
+  0%,
+  57%,
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--cs-beam-angle))
+      scaleY(0.04);
+  }
+
+  66% {
+    opacity: 0.14;
+  }
+
+  71% {
+    opacity: 1;
+
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--cs-beam-angle))
+      scaleY(1);
+  }
+
+  77% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--cs-beam-angle))
+      scaleY(1.14);
+  }
+}
+
+@keyframes csAuthShockwave {
+  0%,
+  62% {
+    opacity: 0;
+    transform: scale(0.24);
+  }
+
+  70% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(5.6);
+  }
+}
+
+@keyframes csAuthReactorCharge {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.78);
+  }
+
+  62% {
+    opacity: 0.92;
+    transform: scale(1.13);
+  }
+
+  72% {
+    opacity: 1;
+    transform: scale(1.46);
+  }
+
+  83% {
+    opacity: 0.43;
+    transform: scale(0.9);
+  }
+}
+
+/* =========================================================
+   Accessibility
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-auth-grid,
+  .cs-auth-aurora,
+  .cs-auth-stars,
+  .cs-auth-orbit-runner,
+  .cs-auth-cube,
+  .cs-auth-energy-core,
+  .cs-auth-energy-core-inner,
+  .cs-auth-beam,
+  .cs-auth-shockwave,
+  .cs-auth-reactor-glow {
+    animation: none !important;
+  }
+
+  .cs-auth-cube {
+    transform: rotateX(-22deg) rotateY(35deg) rotateZ(7deg);
+  }
+
+  .cs-auth-pointer-glow {
+    display: none;
+  }
+}
+
+/* =========================================================
+   Large screens
+   ========================================================= */
+
+@media (min-width: 1536px) {
+  .cs-auth-reactor {
+    left: 49%;
+    width: 610px;
+    height: 610px;
+  }
+
+  .cs-auth-orbit-plane-a {
+    width: 400px;
+    height: 400px;
+  }
+
+  .cs-auth-orbit-plane-b {
+    width: 372px;
+    height: 372px;
+  }
+
+  .cs-auth-orbit-plane-c {
+    width: 340px;
+    height: 340px;
+  }
+
+  .cs-auth-cube-scene {
+    width: 148px;
+    height: 148px;
+  }
+}

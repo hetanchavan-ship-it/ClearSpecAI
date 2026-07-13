@@ -1,0 +1,122 @@
+ {
+  "theme": "Light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "emotional_tone": "Professional, authoritative, intelligent, clear, analytical, and confident.",
+  "visual_mood": "Swiss typography, high-contrast monochrome with strategic color accents, stark white background, crisp borders, 'Control Room' grid.",
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F9FAFB",
+      "tertiary": "#F3F4F6"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#4B5563",
+      "tertiary": "#9CA3AF"
+    },
+    "primary": {
+      "DEFAULT": "#002FA7",
+      "hover": "#00258A",
+      "foreground": "#FFFFFF"
+    },
+    "status": {
+      "error": "#EF4444",
+      "error_bg": "#FEF2F2",
+      "success": "#059669",
+      "success_bg": "#ECFDF5",
+      "warning": "#F59E0B",
+      "warning_bg": "#FFFBEB"
+    },
+    "border": "#E5E7EB",
+    "input": "#E5E7EB",
+    "ring": "#002FA7"
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Cormorant Garamond",
+      "body": "IBM Plex Sans",
+      "mono": "IBM Plex Mono"
+    },
+    "rules": {
+      "h1": "text-4xl sm:text-5xl font-heading font-medium tracking-tight text-gray-900",
+      "h2": "text-2xl sm:text-3xl font-heading font-medium tracking-tight text-gray-900",
+      "h3": "text-xl sm:text-2xl font-heading font-medium text-gray-900",
+      "h4": "text-lg sm:text-xl font-heading font-medium text-gray-900",
+      "body": "text-base font-body text-gray-700 leading-relaxed",
+      "small": "text-sm font-body text-gray-500",
+      "code": "font-mono text-sm text-gray-800 bg-gray-50 px-1 py-0.5 border border-gray-200",
+      "overline": "text-xs font-body uppercase tracking-[0.2em] font-semibold text-gray-500"
+    }
+  },
+  "layout": {
+    "strategy": "The 'Control Room' Grid",
+    "spacing_scale": "p-2, p-4, p-6, p-8, p-12",
+    "structure": "Full-height workstation application. A sidebar for history on the left. The main area divided into a two-column split pane (Input vs Results) on desktop. Dense, data-heavy but clearly sectioned with 1px borders.",
+    "borders": "Grid Borders (The 'Technical' Look). Elements are separated by hard 1px borders instead of margins/shadows.",
+    "radius": "rounded-none",
+    "shadows": "None. Rely on 1px borders for separation. No elevation or soft dropshadows."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#002FA7] text-white rounded-none hover:bg-[#00258A] transition-colors border-none",
+      "secondary": "bg-white text-gray-900 border border-gray-300 rounded-none hover:bg-gray-50 transition-colors",
+      "ghost": "bg-transparent text-gray-700 hover:bg-gray-100 rounded-none"
+    },
+    "inputs": {
+      "default": "border border-gray-300 rounded-none bg-white focus-visible:ring-1 focus-visible:ring-[#002FA7] focus-visible:ring-offset-0 focus-visible:border-[#002FA7] transition-all font-body text-base"
+    },
+    "cards": {
+      "default": "border border-gray-200 bg-white rounded-none p-6 shadow-none"
+    },
+    "tabs": {
+      "list": "bg-gray-50 border-b border-gray-200 rounded-none p-0 h-auto flex",
+      "trigger": "rounded-none border-b-2 border-transparent data-[state=active]:border-[#002FA7] data-[state=active]:bg-white data-[state=active]:shadow-none px-6 py-3 font-body font-medium text-sm text-gray-600 data-[state=active]:text-gray-900 transition-colors",
+      "content": "p-6 bg-white outline-none"
+    },
+    "badges": {
+      "default": "rounded-none border border-gray-200 px-2 py-1 text-xs font-mono tracking-tight uppercase"
+    }
+  },
+  "motion": {
+    "philosophy": "Minimalist, mechanical, and snappy.",
+    "hover": "Instant background color shifts, no slow fades.",
+    "transitions": "transition-colors duration-150 ease-in-out",
+    "loading": "Technical scanning line or ASCII loader instead of generic spinners."
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1638864616270-64041b699a50?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZ2VvbWV0cmljJTIwbG9nb3xlbnwwfHx8fDE3ODIwNDcxODV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Minimalist geometric logo for auth screen or top left branding",
+        "category": "logo"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMGhlYWRzaG90fGVufDB8fHx8MTc4MjA0NzE4NXww&ixlib=rb-4.1.0&q=85",
+        "description": "Professional avatar placeholder for logged-in user profile",
+        "category": "avatar"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "style": "Clean, unembellished 1.5px stroke width."
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure all text meets at least 4.5:1 ratio. The primary blue #002FA7 on white exceeds this easily.",
+    "focus": "All interactive elements must have a sharp focus ring: focus-visible:ring-1 focus-visible:ring-[#002FA7] focus-visible:ring-offset-1.",
+    "testing": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case."
+  },
+  "instructions_to_main_agent": [
+    "Install the required fonts: Cormorant Garamond, IBM Plex Sans, and IBM Plex Mono via Google Fonts.",
+    "Configure Tailwind with the provided color palette, font families, and disable border-radius on major components.",
+    "Do NOT use standard Shadcn rounded corners or shadows. Strip them out in favor of hard lines and flat colors.",
+    "For the main layout, build a full-screen dashboard (h-screen) with a fixed sidebar for history, and a flexible right area containing the main workspace.",
+    "The workspace should ideally be a split view: left side for raw input notes and right side for the tabbed results.",
+    "Use Lucide-React for icons.",
+    "Render the LLM output using a markdown renderer (like react-markdown), ensuring the typography rules are applied to the rendered HTML.",
+    "Ensure the 'Clean & Standardise' button has a prominent presence, utilizing the International Klein Blue.",
+    "Apply data-testid to every button, tab, and input element.",
+    "For the gap analysis section, utilize the error (#EF4444) and warning (#F59E0B) colors strategically for flagged contradictions or missing edges."
+  ]
+}
+

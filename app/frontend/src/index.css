@@ -1,0 +1,941 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base browser reset */
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 8%;
+
+    --primary: 222 100% 33%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 8%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 222 100% 33%;
+
+    --radius: 0;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 0 0% 100%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 220 10% 20%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 10% 20%;
+    --muted-foreground: 220 8% 70%;
+
+    --accent: 220 10% 20%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 0 0% 100%;
+  }
+
+  * {
+    border-color: hsl(var(--border) / 1);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  ::selection {
+    background-color: #002FA7;
+    color: white;
+  }
+
+  [data-debug-wrapper="true"] {
+    display: contents !important;
+  }
+
+  [data-debug-wrapper="true"] > * {
+    margin-left: inherit;
+    margin-right: inherit;
+    margin-top: inherit;
+    margin-bottom: inherit;
+    padding-left: inherit;
+    padding-right: inherit;
+    padding-top: inherit;
+    padding-bottom: inherit;
+    gap: inherit;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  .text-klein {
+    color: #002FA7;
+  }
+
+  .bg-klein {
+    background-color: #002FA7;
+  }
+
+  .border-klein {
+    border-color: #002FA7;
+  }
+
+  .tracking-overline {
+    letter-spacing: 0.2em;
+  }
+
+  .no-radius,
+  .no-radius * {
+    border-radius: 0 !important;
+  }
+}
+
+/* Scan loader */
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 47, 167, 0.3),
+    transparent
+  );
+  animation: scan 1.4s linear infinite;
+}
+
+/* Markdown body */
+.md-body {
+  font-size: 15px;
+  color: #1f2937; /* gray-800 */
+  line-height: 1.7;
+}
+
+.md-body h1 {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 500; /* font-medium */
+  color: #111827; /* gray-900 */
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.md-body h2 {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 500;
+  color: #111827;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+
+.md-body h3 {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 500;
+  color: #111827;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.md-body h4 {
+  font-size: 1rem; /* text-base */
+  font-weight: 600;
+  color: #111827;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.md-body p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.md-body ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.md-body ul > li { margin-bottom: 0.25rem; }
+
+.md-body ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.md-body ol > li { margin-bottom: 0.25rem; }
+
+.md-body strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.md-body code {
+  font-size: 13px;
+  background-color: #f3f4f6; /* gray-100 */
+  border: 1px solid #e5e7eb; /* gray-200 */
+  padding: 1px 0.25rem;
+}
+
+.md-body pre {
+  font-size: 13px;
+  background-color: #111827; /* gray-900 */
+  color: #f3f4f6; /* gray-100 */
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.md-body pre code {
+  background: transparent;
+  border: 0;
+  color: #f3f4f6;
+  padding: 0;
+}
+
+.md-body table {
+  width: 100%;
+  font-size: 0.875rem; /* text-sm */
+  margin: 1rem 0;
+  border: 1px solid #e5e7eb;
+  border-collapse: collapse;
+}
+
+.md-body th {
+  background-color: #f9fafb; /* gray-50 */
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+}
+
+.md-body td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6; /* gray-100 */
+  vertical-align: top;
+}
+
+.md-body blockquote {
+  border-left-width: 2px;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #374151; /* gray-700 */
+  font-style: italic;
+  border-left-color: #002FA7;
+}
+/* ===============================
+   Auth futuristic animation styles
+   =============================== */
+
+.auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 25%, rgba(59, 130, 246, 0.08), transparent 25%),
+    radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.08), transparent 30%);
+  animation: authAuroraMove 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.auth-animated-grid {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: gridDrift 18s linear infinite;
+}
+
+.auth-aurora {
+  background:
+    radial-gradient(circle at 15% 30%, rgba(0, 255, 255, 0.08), transparent 22%),
+    radial-gradient(circle at 80% 20%, rgba(0, 102, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 70% 75%, rgba(139, 92, 246, 0.08), transparent 25%);
+  animation: authAuroraMove 14s ease-in-out infinite alternate;
+}
+
+.auth-spin-slow {
+  animation: authSpin 14s linear infinite;
+}
+
+.auth-spin-reverse {
+  animation: authSpinReverse 18s linear infinite;
+}
+
+.auth-float-dot {
+  animation: authFloatDot 4s ease-in-out infinite;
+}
+
+@keyframes authSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes authSpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes authFloatDot {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-8px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes gridDrift {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(42px, 42px);
+  }
+}
+
+@keyframes authAuroraMove {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(20px, -10px, 0) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-18px, 12px, 0) scale(1.02);
+    opacity: 0.92;
+  }
+}
+/* =========================================
+   ClearSpec charging pulsar cube
+   ========================================= */
+
+.auth-reactor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.auth-reactor-glow {
+  position: absolute;
+  inset: 22%;
+  border-radius: 9999px;
+  background:
+    radial-gradient(
+      circle,
+      rgba(103, 232, 249, 0.42) 0%,
+      rgba(37, 99, 235, 0.2) 35%,
+      rgba(99, 102, 241, 0.08) 58%,
+      transparent 76%
+    );
+  filter: blur(22px);
+  animation: authReactorCharge 3.2s ease-in-out infinite;
+}
+
+/* Orbital rings */
+
+.auth-reactor-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.auth-reactor-ring-1 {
+  inset: 8%;
+  animation: authRingOne 13s linear infinite;
+}
+
+.auth-reactor-ring-2 {
+  inset: 19%;
+  border-color: rgba(96, 165, 250, 0.38);
+  animation: authRingTwo 9s linear infinite reverse;
+}
+
+.auth-reactor-ring-3 {
+  inset: 30%;
+  border-color: rgba(167, 139, 250, 0.42);
+  animation: authRingThree 7s linear infinite;
+}
+
+/* Pulsar beams */
+
+.auth-pulsar-beam {
+  --beam-rotation: 0deg;
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+
+  width: 2px;
+  height: 175%;
+
+  transform-origin: center;
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--beam-rotation))
+    scaleY(0.08);
+
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(34, 211, 238, 0.04) 17%,
+    rgba(125, 211, 252, 0.85) 43%,
+    white 50%,
+    rgba(96, 165, 250, 0.85) 57%,
+    rgba(34, 211, 238, 0.04) 83%,
+    transparent 100%
+  );
+
+  opacity: 0;
+  filter: blur(0.2px);
+  box-shadow:
+    0 0 8px rgba(34, 211, 238, 0.8),
+    0 0 24px rgba(59, 130, 246, 0.65),
+    0 0 48px rgba(99, 102, 241, 0.35);
+
+  animation: authPulsarBeam 3.2s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+.auth-pulsar-beam-vertical {
+  --beam-rotation: 0deg;
+}
+
+.auth-pulsar-beam-horizontal {
+  --beam-rotation: 90deg;
+  animation-delay: 0.08s;
+}
+
+.auth-pulsar-beam-diagonal-1 {
+  --beam-rotation: 45deg;
+  animation-delay: 0.16s;
+}
+
+.auth-pulsar-beam-diagonal-2 {
+  --beam-rotation: 135deg;
+  animation-delay: 0.24s;
+}
+
+/* Shockwaves released after each charge */
+
+.auth-shockwave {
+  position: absolute;
+  inset: 36%;
+  z-index: 2;
+  border-radius: 9999px;
+  border: 1px solid rgba(103, 232, 249, 0.75);
+  opacity: 0;
+  animation: authShockwave 3.2s ease-out infinite;
+}
+
+.auth-shockwave-2 {
+  animation-delay: 0.42s;
+}
+
+.auth-shockwave-3 {
+  animation-delay: 0.84s;
+}
+
+/* Real 3D cube */
+
+.auth-cube-scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+
+  width: 130px;
+  height: 130px;
+
+  transform: translate(-50%, -50%);
+  perspective: 900px;
+}
+
+.auth-cube-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  transform-style: preserve-3d;
+  animation:
+    authCubeRotate3D 10s linear infinite,
+    authCubeCharge 3.2s ease-in-out infinite;
+
+  will-change: transform, filter;
+}
+
+.auth-cube-face {
+  position: absolute;
+  inset: 13px;
+
+  border: 1px solid rgba(165, 243, 252, 0.82);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(34, 211, 238, 0.13),
+      rgba(37, 99, 235, 0.24),
+      rgba(139, 92, 246, 0.12)
+    );
+
+  box-shadow:
+    inset 0 0 28px rgba(34, 211, 238, 0.2),
+    0 0 18px rgba(59, 130, 246, 0.22);
+
+  backdrop-filter: blur(2px);
+}
+
+.auth-cube-front {
+  transform: translateZ(52px);
+}
+
+.auth-cube-back {
+  transform: rotateY(180deg) translateZ(52px);
+}
+
+.auth-cube-right {
+  transform: rotateY(90deg) translateZ(52px);
+}
+
+.auth-cube-left {
+  transform: rotateY(-90deg) translateZ(52px);
+}
+
+.auth-cube-top {
+  transform: rotateX(90deg) translateZ(52px);
+}
+
+.auth-cube-bottom {
+  transform: rotateX(-90deg) translateZ(52px);
+}
+
+/* Central charging core */
+
+.auth-energy-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+
+  width: 52px;
+  height: 52px;
+
+  transform: translate(-50%, -50%) rotate(45deg);
+
+  border: 1px solid rgba(207, 250, 254, 0.95);
+
+  background:
+    radial-gradient(
+      circle,
+      white 0%,
+      rgba(103, 232, 249, 0.9) 16%,
+      rgba(59, 130, 246, 0.72) 42%,
+      rgba(99, 102, 241, 0.24) 68%,
+      transparent 100%
+    );
+
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.9),
+    0 0 30px rgba(34, 211, 238, 0.9),
+    0 0 65px rgba(59, 130, 246, 0.75),
+    0 0 110px rgba(99, 102, 241, 0.48);
+
+  animation: authCoreCharge 3.2s ease-in-out infinite;
+}
+
+.auth-energy-core-inner {
+  position: absolute;
+  inset: 28%;
+  border: 1px solid white;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 0 12px white,
+    0 0 28px rgba(103, 232, 249, 1);
+  animation: authCoreInner 1.6s ease-in-out infinite alternate;
+}
+
+/* Orbiting energy particles */
+
+.auth-orbit-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 7;
+
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+
+  background: white;
+  box-shadow:
+    0 0 8px white,
+    0 0 16px rgba(34, 211, 238, 1);
+
+  transform-origin: 0 0;
+}
+
+.auth-orbit-particle-1 {
+  animation: authParticleOrbitOne 4.5s linear infinite;
+}
+
+.auth-orbit-particle-2 {
+  animation: authParticleOrbitTwo 6s linear infinite reverse;
+}
+
+.auth-orbit-particle-3 {
+  animation: authParticleOrbitThree 7.5s linear infinite;
+}
+
+.auth-orbit-particle-4 {
+  animation: authParticleOrbitFour 5.2s linear infinite reverse;
+}
+
+/* Animation timing:
+   cube charges from 0–65%,
+   fires beams near 70%,
+   then briefly cools down.
+*/
+
+@keyframes authCubeRotate3D {
+  0% {
+    transform: rotateX(-24deg) rotateY(0deg) rotateZ(8deg);
+  }
+
+  50% {
+    transform: rotateX(24deg) rotateY(180deg) rotateZ(-8deg);
+  }
+
+  100% {
+    transform: rotateX(-24deg) rotateY(360deg) rotateZ(8deg);
+  }
+}
+
+@keyframes authCubeCharge {
+  0%,
+  100% {
+    filter:
+      brightness(0.9)
+      drop-shadow(0 0 9px rgba(34, 211, 238, 0.28));
+  }
+
+  60% {
+    filter:
+      brightness(1.35)
+      drop-shadow(0 0 28px rgba(34, 211, 238, 0.8));
+  }
+
+  72% {
+    filter:
+      brightness(2)
+      drop-shadow(0 0 52px rgba(96, 165, 250, 1));
+  }
+
+  80% {
+    filter:
+      brightness(1.05)
+      drop-shadow(0 0 14px rgba(34, 211, 238, 0.4));
+  }
+}
+
+@keyframes authCoreCharge {
+  0%,
+  100% {
+    transform:
+      translate(-50%, -50%)
+      rotate(45deg)
+      scale(0.72);
+
+    opacity: 0.58;
+  }
+
+  58% {
+    transform:
+      translate(-50%, -50%)
+      rotate(225deg)
+      scale(1.08);
+
+    opacity: 1;
+  }
+
+  70% {
+    transform:
+      translate(-50%, -50%)
+      rotate(315deg)
+      scale(1.45);
+
+    opacity: 1;
+  }
+
+  78% {
+    transform:
+      translate(-50%, -50%)
+      rotate(405deg)
+      scale(0.84);
+
+    opacity: 0.72;
+  }
+}
+
+@keyframes authCoreInner {
+  from {
+    opacity: 0.55;
+    transform: scale(0.7);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes authPulsarBeam {
+  0%,
+  57%,
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--beam-rotation))
+      scaleY(0.05);
+  }
+
+  66% {
+    opacity: 0.16;
+  }
+
+  71% {
+    opacity: 1;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--beam-rotation))
+      scaleY(1);
+  }
+
+  76% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--beam-rotation))
+      scaleY(1.12);
+  }
+}
+
+@keyframes authShockwave {
+  0%,
+  62% {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+
+  70% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(5.2);
+  }
+}
+
+@keyframes authReactorCharge {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.78);
+  }
+
+  62% {
+    opacity: 0.9;
+    transform: scale(1.12);
+  }
+
+  72% {
+    opacity: 1;
+    transform: scale(1.42);
+  }
+
+  82% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes authRingOne {
+  from {
+    transform: rotateX(67deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: rotateX(67deg) rotateZ(360deg);
+  }
+}
+
+@keyframes authRingTwo {
+  from {
+    transform: rotateY(68deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: rotateY(68deg) rotateZ(360deg);
+  }
+}
+
+@keyframes authRingThree {
+  from {
+    transform: rotateX(56deg) rotateY(48deg) rotateZ(0deg);
+  }
+
+  to {
+    transform: rotateX(56deg) rotateY(48deg) rotateZ(360deg);
+  }
+}
+
+@keyframes authParticleOrbitOne {
+  from {
+    transform: rotate(0deg) translateX(122px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(122px);
+  }
+}
+
+@keyframes authParticleOrbitTwo {
+  from {
+    transform: rotate(0deg) translateX(156px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(156px);
+  }
+}
+
+@keyframes authParticleOrbitThree {
+  from {
+    transform: rotate(0deg) translateX(92px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(92px);
+  }
+}
+
+@keyframes authParticleOrbitFour {
+  from {
+    transform: rotate(0deg) translateX(178px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(178px);
+  }
+}
+
+/* Respect reduced-motion accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-cube-3d,
+  .auth-energy-core,
+  .auth-energy-core-inner,
+  .auth-reactor-ring,
+  .auth-pulsar-beam,
+  .auth-shockwave,
+  .auth-reactor-glow,
+  .auth-orbit-particle {
+    animation: none !important;
+  }
+
+  .auth-cube-3d {
+    transform: rotateX(-22deg) rotateY(35deg) rotateZ(8deg);
+  }
+}

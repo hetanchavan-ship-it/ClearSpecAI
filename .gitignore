@@ -1,0 +1,22 @@
+node_modules
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+app/backend/.env
+app/frontend/.env
+
+# Dependencies and generated files
+node_modules/
+**/node_modules/
+node_modules_corrupt/
+**/node_modules_corrupt/
+public_corrupt/
+**/public_corrupt/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Damaged Git backup
+.git_corrupt/
