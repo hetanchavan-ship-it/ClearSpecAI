@@ -9,7 +9,7 @@ export const API = configuredBackendUrl
 
 export const api = axios.create({
   baseURL: API,
-  timeout: 120000,
+  timeout: 600000,
 });
 
 api.interceptors.request.use((config) => {

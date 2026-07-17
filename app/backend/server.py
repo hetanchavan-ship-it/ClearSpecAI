@@ -27,12 +27,12 @@ from auth import (  # noqa: E402
 )
 from file_extract import extract_text  # noqa: E402
 from llm_client import call_llm  # noqa: E402
-from prompts import (  # noqa: E402
-    GAP_SYSTEM,
+from prompts import (
     STORIES_SYSTEM,
+    GAP_SYSTEM,
     TRACE_SYSTEM,
-    gap_user_msg,
     stories_user_msg,
+    gap_user_msg,
     trace_user_msg,
 )
 
@@ -158,9 +158,13 @@ async def clean(payload: CleanRequest, user=Depends(get_current_user)):
         )
 
     stories_md = await call_llm(
-        STORIES_SYSTEM,
-        stories_user_msg(payload.raw_text, payload.domain)
-    )
+    STORIES_SYSTEM,
+    stories_user_msg(
+        raw_text=payload.raw_text,
+        domain=payload.domain,
+    ),
+    stage="stories",
+)
 
     record = {
         "id": str(uuid.uuid4()),
@@ -189,9 +193,13 @@ async def analyze(payload: AnalyzeRequest, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Stories required.")
 
     gap_md = await call_llm(
-        GAP_SYSTEM,
-        gap_user_msg(payload.stories, payload.context)
-    )
+    GAP_SYSTEM,
+    gap_user_msg(
+        stories_md=payload.stories,
+        context=payload.context or "",
+    ),
+    stage="gap",
+)
 
     if payload.history_id:
         await db.history.update_one(
@@ -208,9 +216,12 @@ async def trace(payload: TraceRequest, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Stories required.")
 
     trace_md = await call_llm(
-        TRACE_SYSTEM,
-        trace_user_msg(payload.stories)
-    )
+    TRACE_SYSTEM,
+    trace_user_msg(
+        stories_md=payload.stories,
+    ),
+    stage="trace",
+)
 
     if payload.history_id:
         await db.history.update_one(
