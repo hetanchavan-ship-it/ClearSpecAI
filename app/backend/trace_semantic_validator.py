@@ -118,21 +118,11 @@ def _table_body(sql: str, *table_names: str) -> str:
     match = re.search(pattern, sql)
     return match.group(1) if match else ""
 
+
 def _threshold_table_names(
     sql: str,
 ) -> list[str]:
-    """
-    Return CREATE TABLE names that clearly represent a critical-value
-    threshold or clinical criticality rule artifact.
-
-    Accepts valid naming variations such as:
-    - critical_threshold
-    - critical_threshold_rule
-    - critical_value_threshold
-    - critical_value_rule
-    - lab_critical_threshold
-    - clinical_critical_rule
-    """
+    """Return table names representing critical-value rules or thresholds."""
 
     created_tables = re.findall(
         r"(?i)"
@@ -148,17 +138,15 @@ def _threshold_table_names(
 
     for table_name in created_tables:
         normalized = table_name.lower()
-        tokens = set(
+        tokens = {
             token
             for token in normalized.split("_")
             if token
-        )
+        }
 
-        has_critical_concept = (
-            "critical" in tokens
-            or "criticality" in tokens
+        has_critical_concept = bool(
+            tokens & {"critical", "criticality"}
         )
-
         has_rule_concept = bool(
             tokens
             & {
@@ -171,15 +159,11 @@ def _threshold_table_names(
             }
         )
 
-        if (
-            has_critical_concept
-            and has_rule_concept
-        ):
-            matches.append(
-                normalized
-            )
+        if has_critical_concept and has_rule_concept:
+            matches.append(normalized)
 
     return matches
+
 
 def _source_assumptions(source_text: str) -> list[str]:
     """
@@ -377,6 +361,7 @@ def _check_threshold_artifact(
         r"(?i)\b(?:"
         r"server_validate_critical|"
         r"is_critical_server_validated|"
+        r"server_side_critical|"
         r"server[- ]side\s+(?:criticality|critical[- ]value)\s+validation|"
         r"critical(?:ity)?\s+(?:threshold|rule|validation)|"
         r"predefined\s+critical\s+values|"
@@ -389,44 +374,27 @@ def _check_threshold_artifact(
     if not validation_referenced:
         return []
 
-    schema_present = bool(
-        _threshold_table_names(
-            sql
-        )
-    )
+    schema_present = bool(_threshold_table_names(sql))
 
     external_service_present = re.search(
         r"(?i)\b(?:"
-        r"external|"
-        r"central|"
-        r"dedicated|"
-        r"versioned"
+        r"external|central|dedicated|versioned"
         r")?\s*"
-        r"(?:"
-        r"clinical[- ]rules?|"
-        r"critical[- ]value\s+rules?|"
-        r"criticality\s+rules?|"
-        r"rules?\s+engine"
-        r")\s+"
+        r"(?:clinical[- ]rules?|critical[- ]value\s+rules?|"
+        r"criticality\s+rules?|rules?\s+engine)\s+"
         r"(?:service|engine|system)\b",
         text,
     )
 
-    if (
-        schema_present
-        or external_service_present
-    ):
+    if schema_present or external_service_present:
         return []
 
     return [
         (
             "TRACE_THRESHOLD_ARTIFACT_MISSING",
-            (
-                "Server-side critical-value validation is referenced "
-                "without a versioned threshold/rule schema or explicit "
-                "external clinical rule service. Define units, versions, "
-                "approvals, and auditability."
-            ),
+            "Server-side critical-value validation is referenced without a "
+            "versioned threshold/rule schema or explicit external clinical "
+            "rule service. Define units, versions, approvals, and auditability.",
         )
     ]
 
@@ -435,9 +403,7 @@ def _check_threshold_selection(
     text: str,
     sql: str,
 ) -> list[tuple[str, str]]:
-    threshold_tables = _threshold_table_names(
-        sql
-    )
+    threshold_tables = _threshold_table_names(sql)
 
     if not threshold_tables:
         return []
@@ -455,19 +421,11 @@ def _check_threshold_selection(
         text,
     )
 
-    selection_text = "\n".join(
-        selection_contexts
-    )
-
-    if not selection_text:
-        selection_text = text
+    selection_text = "\n".join(selection_contexts) or text
 
     checks = {
         "test code": bool(
-            re.search(
-                r"(?i)\btest_code\b",
-                selection_text,
-            )
+            re.search(r"(?i)\btest_code\b", selection_text)
         ),
         "unit": bool(
             re.search(
@@ -477,31 +435,17 @@ def _check_threshold_selection(
         ),
         "effective interval": bool(
             re.search(
-                r"(?i)\b(?:"
-                r"effective_from|"
-                r"valid_from|"
-                r"active_from"
-                r")\b",
+                r"(?i)\b(?:effective_from|valid_from|active_from)\b",
                 selection_text,
             )
             and re.search(
-                r"(?i)\b(?:"
-                r"retired_at|"
-                r"effective_to|"
-                r"valid_to|"
-                r"active_until"
-                r")\b",
+                r"(?i)\b(?:retired_at|effective_to|valid_to|active_until)\b",
                 selection_text,
             )
         ),
         "approval state": bool(
             re.search(
-                r"(?i)\b(?:"
-                r"approved|"
-                r"approval_status|"
-                r"approved_at|"
-                r"is_approved"
-                r")\b",
+                r"(?i)\b(?:approved|approval_status|approved_at|is_approved)\b",
                 selection_text,
             )
         ),
@@ -527,14 +471,12 @@ def _check_threshold_selection(
         return [
             (
                 "TRACE_THRESHOLD_SELECTION_INCOMPLETE",
-                (
-                    "Critical-threshold selection is underspecified. "
-                    "Define deterministic matching by test code, normalized "
-                    "unit, effective interval, approval state, and highest "
-                    "applicable version. Missing or unclear: "
-                    + ", ".join(missing)
-                    + "."
-                ),
+                "Critical-threshold selection is underspecified. Define "
+                "deterministic matching by test code, normalized unit, "
+                "effective interval, approval state, and highest applicable "
+                "version. Missing or unclear: "
+                + ", ".join(missing)
+                + ".",
             )
         ]
 
@@ -684,124 +626,131 @@ def _check_notification_lifecycle(
     return []
 
 
-def _check_cursor_pagination(text: str) -> list[tuple[str, str]]:
-    issues: list[tuple[str, str]] = []
-    queries = re.findall(
-        r"(?is)(SELECT\b.{0,1800}?ORDER\s+BY\b.{0,300}?LIMIT\b.{0,80})",
+def _cursor_function_blocks(text: str) -> list[str]:
+    """Return only pseudocode functions that explicitly accept or use a cursor."""
+    blocks = re.findall(
+        r"(?is)(function\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\).*?)"
+        r"(?=\nfunction\s+[A-Za-z_][A-Za-z0-9_]*\s*\(|\n##|\Z)",
         text,
     )
+    return [
+        block
+        for block in blocks
+        if re.search(r"(?i)\bcursor\b|\bnext_cursor\b", block)
+    ]
 
-    for query in queries:
-        order_match = re.search(
-            r"(?i)ORDER\s+BY\s+"
-            r"(?:[A-Za-z_][A-Za-z0-9_]*\.)?"
-            r"([A-Za-z_][A-Za-z0-9_]*)"
-            r"(?:\s+(ASC|DESC))?",
-            query,
-        )
 
-        if not order_match:
-            continue
+def _query_literals(block: str) -> list[str]:
+    """Extract quoted SQL-like query strings from a pseudocode function."""
+    literals: list[str] = []
+    for match in re.finditer(
+        r"(?is)(?:query|sql)\s*(?:\+?=)\s*([\"'])(.*?)\1",
+        block,
+    ):
+        literals.append(match.group(2))
+    return literals
 
-        order_field = order_match.group(1).lower()
-        direction = (order_match.group(2) or "ASC").upper()
-        comparisons = re.findall(
-            r"(?i)(?:[A-Za-z_][A-Za-z0-9_]*\.)?"
-            r"([A-Za-z_][A-Za-z0-9_]*)\s*(<=|>=|<|>)\s*"
-            r"(?:\$\d+|:[A-Za-z_][A-Za-z0-9_]*|\?)",
-            query,
-        )
 
-        if not comparisons:
-            continue
+def _check_cursor_pagination(text: str) -> list[tuple[str, str]]:
+    """Validate cursor comparisons only inside cursor-aware result-list functions."""
+    issues: list[tuple[str, str]] = []
 
-        fields = {field.lower() for field, _ in comparisons}
-
-        if order_field not in fields:
-            issues.append(
-                (
-                    "TRACE_CURSOR_ORDER_MISMATCH",
-                    "Cursor pagination compares a field that does not match "
-                    f"the leading ORDER BY field '{order_field}'. Use a "
-                    "compound cursor aligned with the full sort order.",
-                )
+    for block in _cursor_function_blocks(text):
+        queries = _query_literals(block)
+        if not queries:
+            queries = re.findall(
+                r"(?is)(SELECT\b.{0,1600}?ORDER\s+BY\b.{0,300}?LIMIT\b.{0,100})",
+                block,
             )
-            continue
 
-        for field, operator in comparisons:
-            if field.lower() != order_field:
+        for query in queries:
+            if not re.search(r"(?i)\bSELECT\b", query):
                 continue
 
-            wrong_direction = (
-                direction == "DESC" and operator in {">", ">="}
-            ) or (
-                direction == "ASC" and operator in {"<", "<="}
+            order_match = re.search(
+                r"(?i)ORDER\s+BY\s+"
+                r"(?:[A-Za-z_][A-Za-z0-9_]*\.)?"
+                r"([A-Za-z_][A-Za-z0-9_]*)"
+                r"(?:\s+(ASC|DESC))?",
+                query,
             )
+            if not order_match:
+                continue
 
-            if wrong_direction:
+            order_field = order_match.group(1).lower()
+            direction = (order_match.group(2) or "ASC").upper()
+            comparisons = re.findall(
+                r"(?i)(?:[A-Za-z_][A-Za-z0-9_]*\.)?"
+                r"([A-Za-z_][A-Za-z0-9_]*)\s*(<=|>=|<|>)\s*"
+                r"(?:\$\d+|:[A-Za-z_][A-Za-z0-9_]*|\?)",
+                query,
+            )
+            if not comparisons:
+                continue
+
+            fields = {field.lower() for field, _ in comparisons}
+            if order_field not in fields:
                 issues.append(
                     (
-                        "TRACE_CURSOR_DIRECTION_INVALID",
-                        f"Cursor comparison '{field} {operator} ...' conflicts "
-                        f"with ORDER BY {order_field} {direction}. Use a "
-                        "direction-compatible comparator and deterministic "
-                        "tie-breaker.",
+                        "TRACE_CURSOR_ORDER_MISMATCH",
+                        "Cursor pagination compares fields that do not match "
+                        f"the leading ORDER BY field '{order_field}'. Align "
+                        "the compound cursor with the complete result sort.",
                     )
                 )
+                continue
+
+            for field, operator in comparisons:
+                if field.lower() != order_field:
+                    continue
+                wrong_direction = (
+                    direction == "DESC" and operator in {">", ">="}
+                ) or (
+                    direction == "ASC" and operator in {"<", "<="}
+                )
+                if wrong_direction:
+                    issues.append(
+                        (
+                            "TRACE_CURSOR_DIRECTION_INVALID",
+                            f"Cursor comparison '{field} {operator} ...' "
+                            f"conflicts with ORDER BY {order_field} {direction}. "
+                            "Use a direction-compatible comparator and stable tie-breaker.",
+                        )
+                    )
 
     return issues
 
 
 def _check_cursor_not_applied(text: str) -> list[tuple[str, str]]:
-    cursor_declared = re.search(
-        r"(?i)"
-        r"\bcursor\b.{0,50}\blimit\b|"
-        r"\blimit\b.{0,50}\bcursor\b|"
-        r"function\s+\w+\s*\([^)]*\bcursor\b",
-        text,
-    )
-
-    if not cursor_declared:
+    """Require cursor use only when a concrete cursor-aware function is present."""
+    blocks = _cursor_function_blocks(text)
+    if not blocks:
         return []
 
-    functions = re.findall(
-        r"(?is)"
-        r"(function\s+\w+\s*\([^)]*\bcursor\b[^)]*\).*?)"
-        r"(?=\nfunction\s+\w+\s*\(|\n##|\Z)",
-        text,
-    )
-
-    relevant_text = "\n".join(functions) if functions else text
-
-    cursor_used_beyond_signature = re.search(
-        r"(?is)"
-        r"(?:WHERE|AND)\b.{0,500}?"
-        r"(?:"
-        r"\bcursor\b|"
-        r"\bcursor_[a-z0-9_]+\b|"
-        r"\bcollection_ts\s*(?:<|>|<=|>=)\s*(?:\$\d+|:[a-z_]+|\?)|"
-        r"\bid\s*(?:<|>|<=|>=)\s*(?:\$\d+|:[a-z_]+|\?)"
-        r")",
-        relevant_text,
-    )
-
-    only_signature_mentions = len(
-        re.findall(r"(?i)\bcursor\b", relevant_text)
-    ) <= len(functions) if functions else False
-
-    if not cursor_used_beyond_signature or only_signature_mentions:
-        return [
-            (
-                "TRACE_CURSOR_NOT_APPLIED",
-                "Cursor pagination is declared, but the cursor is not applied "
-                "to the data query. Use a compound cursor aligned with "
-                "ORDER BY, such as collection timestamp plus a stable ID "
-                "tie-breaker.",
-            )
-        ]
-
+    for block in blocks:
+        query_text = "\n".join(_query_literals(block)) or block
+        cursor_condition = re.search(
+            r"(?is)(?:WHERE|AND)\b.{0,700}?"
+            r"(?:\bcursor\b|\bcursor_[A-Za-z0-9_]+\b|"
+            r"\b(?:collection_ts|result_date|created_at|finalized_at|id)"
+            r"\s*(?:<|>|<=|>=)\s*(?:\$\d+|:[A-Za-z_][A-Za-z0-9_]*|\?))",
+            query_text,
+        )
+        conditional_query_building = re.search(
+            r"(?is)if\s+cursor\s*(?:!=|is\s+not)\s*(?:null|none)"
+            r".{0,400}?(?:query|sql)\s*\+=\s*[\"']\s*(?:AND|WHERE)\b",
+            block,
+        )
+        if not cursor_condition and not conditional_query_building:
+            return [
+                (
+                    "TRACE_CURSOR_NOT_APPLIED",
+                    "A result-list function accepts a cursor, but no cursor condition "
+                    "is applied to its data query. Use a compound cursor aligned "
+                    "with ORDER BY, such as timestamp plus a stable ID tie-breaker.",
+                )
+            ]
     return []
-
 
 def _check_queue_outbox(text: str) -> list[tuple[str, str]]:
     queue_operation = re.search(
@@ -1023,6 +972,439 @@ def _check_confirmed_architecture_decision(
     return []
 
 
+def _check_btree_gist_extension(
+    sql: str,
+) -> list[tuple[str, str]]:
+    uses_text_gist_equality = bool(
+        re.search(
+            r"(?is)EXCLUDE\s+USING\s+gist\s*\(.*?"
+            r"\b(?:facility_code|dept_code|department_code|service_code|"
+            r"scope_code|tenant_id)\b\s+WITH\s+=",
+            sql,
+        )
+    )
+    has_extension = bool(
+        re.search(
+            r"(?i)CREATE\s+EXTENSION\s+IF\s+NOT\s+EXISTS\s+"
+            r"\"?btree_gist\"?",
+            sql,
+        )
+    )
+
+    if uses_text_gist_equality and not has_extension:
+        return [
+            (
+                "TRACE_BTREE_GIST_MISSING",
+                "A GiST exclusion constraint uses equality on scalar fields "
+                "such as TEXT, but btree_gist is not enabled. Add "
+                "CREATE EXTENSION IF NOT EXISTS btree_gist; or use a "
+                "different overlap-enforcement design.",
+            )
+        ]
+
+    return []
+
+
+
+def _check_sql_clause_order(text: str) -> list[tuple[str, str]]:
+    """Detect invalid clause ordering only inside concrete query construction."""
+    blocks = re.findall(
+        r"(?is)(function\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\).*?)"
+        r"(?=\nfunction\s+[A-Za-z_][A-Za-z0-9_]*\s*\(|\n##|\Z)",
+        text,
+    )
+
+    for block in blocks:
+        for query in _query_literals(block):
+            normalized = re.sub(r"\s+", " ", query).strip()
+            invalid = (
+                re.search(r"(?i)\bORDER\s+BY\b.*?\bLIMIT\b.*?\b(?:AND|WHERE)\b", normalized)
+                or re.search(r"(?i)\bLIMIT\b.*?\bWHERE\b", normalized)
+                or re.search(r"(?i)\bORDER\s+BY\b.*?\bWHERE\b", normalized)
+            )
+            if invalid:
+                return [
+                    (
+                        "TRACE_SQL_CLAUSE_ORDER_INVALID",
+                        "A constructed SQL query places WHERE/AND after ORDER BY or LIMIT. "
+                        "Build all filters first, followed by ORDER BY and LIMIT.",
+                    )
+                ]
+
+        for assignment in re.finditer(
+            r"(?is)(?:query|sql)\s*=\s*([\"'])(.*?)\1",
+            block,
+        ):
+            base_query = assignment.group(2)
+            if not re.search(r"(?i)\b(?:ORDER\s+BY|LIMIT)\b", base_query):
+                continue
+            tail = block[assignment.end():]
+            append_filter = re.search(
+                r"(?is)(?:query|sql)\s*\+=\s*([\"'])\s*(?:AND|WHERE)\b.*?\1",
+                tail,
+            )
+            if append_filter:
+                return [
+                    (
+                        "TRACE_SQL_CLAUSE_ORDER_INVALID",
+                        "Query construction appends a WHERE/AND filter after ORDER BY or LIMIT. "
+                        "Build filters before final sort and pagination clauses.",
+                    )
+                ]
+    return []
+
+def _check_cursor_tiebreaker(
+    text: str,
+) -> list[tuple[str, str]]:
+    cursor_context = re.search(
+        r"(?i)\bcursor\b|\bnext_cursor\b|cursor[- ]based",
+        text,
+    )
+
+    if not cursor_context:
+        return []
+
+    order_clauses = re.findall(
+        r"(?i)ORDER\s+BY\s+([^\n;\"']+)",
+        text,
+    )
+
+    timestamp_order = any(
+        re.search(
+            r"(?i)\b(?:collection_ts|result_date|created_at|finalized_at)\b",
+            clause,
+        )
+        for clause in order_clauses
+    )
+    stable_id_tiebreaker = any(
+        re.search(
+            r"(?i)\b(?:collection_ts|result_date|created_at|finalized_at)\b"
+            r"[^\n,]*\b(?:ASC|DESC)?\s*,\s*"
+            r"(?:[A-Za-z_][A-Za-z0-9_]*\.)?id\b",
+            clause,
+        )
+        for clause in order_clauses
+    )
+
+    if timestamp_order and not stable_id_tiebreaker:
+        return [
+            (
+                "TRACE_CURSOR_TIEBREAKER_MISSING",
+                "Cursor pagination orders by a non-unique timestamp without "
+                "a stable ID tie-breaker. Use a compound cursor and ORDER BY "
+                "timestamp plus id in the same direction.",
+            )
+        ]
+
+    return []
+
+
+
+def _check_notification_before_critical_check(text: str) -> list[tuple[str, str]]:
+    """Check only ingestion/result-processing workflows, not delivery workers."""
+    functions = re.findall(
+        r"(?is)(function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\).*?)"
+        r"(?=\nfunction\s+[A-Za-z_][A-Za-z0-9_]*\s*\(|\n##|\Z)",
+        text,
+    )
+
+    for function, function_name in functions:
+        name = function_name.lower()
+        is_ingestion_flow = bool(
+            re.search(r"(?:ingest|process|handle|create|receive).*(?:lab|result)", name)
+            or re.search(r"(?i)\binsert\s+lab_result\b", function)
+        )
+        if not is_ingestion_flow:
+            continue
+
+        notification_pos = re.search(r"(?i)(?:insert|create)\s+notification\b", function)
+        if not notification_pos:
+            continue
+
+        validation_pos = re.search(
+            r"(?i)(?:server_side_critical|server_validate_critical|validate_critical|"
+            r"derive_criticality|is_critical_server_validated|validated_critical)",
+            function,
+        )
+        guarded_creation = re.search(
+            r"(?is)if\s+(?:is_critical|is_crit|validated_critical|criticality_result)"
+            r".{0,500}?(?:insert|create)\s+notification\b",
+            function,
+        )
+        if not validation_pos or (
+            notification_pos.start() < validation_pos.start() and not guarded_creation
+        ):
+            return [
+                (
+                    "TRACE_NOTIFICATION_BEFORE_CRITICAL_CHECK",
+                    "An ingestion/result-processing workflow creates a notification before "
+                    "server-side criticality validation. Persist the result and outbox event "
+                    "first, then create the notification only after validated criticality.",
+                )
+            ]
+    return []
+
+def _check_critical_function_rule_artifact(
+    text: str,
+    sql: str,
+) -> list[tuple[str, str]]:
+    function_referenced = re.search(
+        r"(?i)\b(?:server_side_critical|server_validate_critical|"
+        r"validate_critical|derive_criticality|"
+        r"is_critical_server_validated)\b",
+        text,
+    )
+
+    if not function_referenced:
+        return []
+
+    if _threshold_table_names(sql):
+        return []
+
+    external_service = re.search(
+        r"(?i)\b(?:clinical|critical[- ]value|criticality)\s+"
+        r"(?:rule|rules|rules engine)\s+(?:service|engine)\b",
+        text,
+    )
+
+    if external_service:
+        return []
+
+    return [
+        (
+            "TRACE_CRITICAL_FUNCTION_WITHOUT_RULE_ARTIFACT",
+            "A server-side criticality function is called without a "
+            "versioned threshold/rule table or explicit clinical-rules "
+            "service. Define the rule source, unit normalization, effective "
+            "dates, approval state, and deterministic version selection.",
+        )
+    ]
+
+
+def _check_undefined_routing_fields(
+    text: str,
+    sql: str,
+) -> list[tuple[str, str]]:
+    referenced = set(
+        re.findall(
+            r"(?i)\blab\.(facility|facility_id|facility_code|"
+            r"dept|department|department_id|department_code|"
+            r"care_team_id|service_code)\b",
+            text,
+        )
+    )
+
+    if not referenced:
+        return []
+
+    body = _table_body(
+        sql,
+        "lab_result",
+        "lab_results",
+        "laboratory_result",
+        "laboratory_results",
+    )
+    normalized_body = body.lower()
+
+    aliases = {
+        "facility": ("facility", "facility_id", "facility_code"),
+        "facility_id": ("facility", "facility_id", "facility_code"),
+        "facility_code": ("facility", "facility_id", "facility_code"),
+        "dept": ("dept", "dept_code", "department", "department_id", "department_code"),
+        "department": ("dept", "dept_code", "department", "department_id", "department_code"),
+        "department_id": ("dept", "dept_code", "department", "department_id", "department_code"),
+        "department_code": ("dept", "dept_code", "department", "department_id", "department_code"),
+        "care_team_id": ("care_team_id",),
+        "service_code": ("service_code",),
+    }
+
+    missing = []
+    for field in sorted(referenced):
+        if not any(
+            re.search(rf"(?im)^\s*{re.escape(candidate)}\s+", normalized_body)
+            for candidate in aliases.get(field, (field,))
+        ):
+            missing.append(field)
+
+    if missing:
+        return [
+            (
+                "TRACE_UNDEFINED_ROUTING_FIELDS",
+                "Notification routing references fields that are not defined "
+                "on the laboratory result or another explicit routing "
+                "context: " + ", ".join(missing) + ". Define facility, "
+                "department, service, encounter, or care-team routing data "
+                "and select it before use.",
+            )
+        ]
+
+    return []
+
+
+
+def _check_no_on_call_handler_missing(text: str) -> list[tuple[str, str]]:
+    """Inspect each on-call routing function and accept common null handlers."""
+    functions = re.findall(
+        r"(?is)(function\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\).*?)"
+        r"(?=\nfunction\s+[A-Za-z_][A-Za-z0-9_]*\s*\(|\n##|\Z)",
+        text,
+    )
+
+    for function in functions:
+        resolves_on_call = re.search(
+            r"(?i)\b(?:get_current_on_call|get_active_on_call|resolve_on_call|"
+            r"oncall\s*=|on_call\s*=|assignment\s*=.*on[_ -]?call|"
+            r"SELECT\s+.*FROM\s+on_call_assignment)",
+            function,
+        )
+        if not resolves_on_call:
+            continue
+
+        explicit_handler = re.search(
+            r"(?is)if\s+(?:not\s+(?:oncall|on_call|assignment)|"
+            r"(?:oncall|on_call|assignment)\s+is\s+(?:null|none)|"
+            r"(?:oncall|on_call|assignment)\s*==\s*(?:null|none)|"
+            r"(?:oncall|on_call|assignment)\s*==\s*false)"
+            r".{0,600}?(?:escalat|missed|unassigned|audit|fallback|"
+            r"dead[- ]letter|create\s+(?:alert|event)|insert\s+(?:alert|event))",
+            function,
+        )
+        if not explicit_handler:
+            return [
+                (
+                    "TRACE_NO_ON_CALL_HANDLER_MISSING",
+                    "An on-call routing workflow does not explicitly handle an absent "
+                    "assignment. Persist an UNASSIGNED or MISSED state, audit it, and invoke "
+                    "the approved fallback.",
+                )
+            ]
+    return []
+
+def _check_ingest_idempotency_missing(
+    text: str,
+    sql: str,
+) -> list[tuple[str, str]]:
+    ingest_function = re.search(
+        r"(?is)function\s+ingest\w*lab\w*\([^)]*"
+        r"(?:idempotency|idem_key|idempotency_key)[^)]*\)",
+        text,
+    )
+
+    if not ingest_function:
+        return []
+
+    lab_body = _table_body(
+        sql,
+        "lab_result",
+        "lab_results",
+        "laboratory_result",
+        "laboratory_results",
+    )
+    ingest_body = _table_body(
+        sql,
+        "ingestion_request",
+        "ingestion_requests",
+        "lab_ingestion_request",
+        "lab_ingestion_requests",
+    )
+
+    persisted_key = bool(
+        re.search(r"(?im)^\s*idempotency_key\s+", lab_body)
+        or re.search(r"(?im)^\s*idempotency_key\s+", ingest_body)
+    )
+    source_identity = bool(
+        re.search(r"(?im)^\s*source_result_id\s+", lab_body)
+        and re.search(r"(?im)^\s*source_system\s+", lab_body)
+        and re.search(r"(?im)^\s*source_version\s+", lab_body)
+    )
+
+    if not persisted_key and not source_identity:
+        return [
+            (
+                "TRACE_INGEST_IDEMPOTENCY_MISSING",
+                "Laboratory-result ingestion accepts an idempotency key but "
+                "does not persist it on the result or an ingestion-request "
+                "table, and no unique source identity is defined. Add a "
+                "database-enforced UNIQUE idempotency or source/version key.",
+            )
+        ]
+
+    return []
+
+
+def _check_api_core_logic_mismatch(
+    text: str,
+) -> list[tuple[str, str]]:
+    has_ingest_logic = bool(
+        re.search(r"(?i)function\s+ingest\w*lab", text)
+    )
+
+    if not has_ingest_logic:
+        return []
+
+    endpoints_section = _extract_heading_section(
+        text,
+        "REST API Endpoints",
+    )
+    has_ingest_endpoint = bool(
+        re.search(
+            r"(?i)\bPOST\b.{0,120}/(?:internal/)?(?:lab-results|"
+            r"laboratory-results|lab_results)\b",
+            endpoints_section,
+        )
+    )
+
+    if not has_ingest_endpoint:
+        return [
+            (
+                "TRACE_API_CORE_LOGIC_MISMATCH",
+                "Core logic defines laboratory-result ingestion, but the REST "
+                "API contract does not expose or document the corresponding "
+                "internal ingestion endpoint. Add the authenticated, "
+                "idempotent endpoint or identify the non-HTTP event contract.",
+            )
+        ]
+
+    return []
+
+
+def _check_get_request_body(
+    text: str,
+) -> list[tuple[str, str]]:
+    endpoints = _extract_heading_section(text, "REST API Endpoints")
+    payloads = _extract_heading_section(text, "Representative Payloads")
+
+    has_get_collection = bool(
+        re.search(
+            r"(?i)\bGET\b.{0,120}/patients?/\{[^}]+\}/lab-results",
+            endpoints,
+        )
+    )
+    has_post_example = bool(
+        re.search(r"(?i)Successful Request.*?POST\s+", payloads, re.S)
+    )
+    body_contains_query_controls = bool(
+        re.search(
+            r"(?is)Successful Request.*?```json.*?"
+            r"\"(?:cursor|limit|sort|dateFrom|dateTo)\"\s*:",
+            payloads,
+        )
+    )
+
+    if has_get_collection and body_contains_query_controls and not has_post_example:
+        return [
+            (
+                "TRACE_GET_REQUEST_BODY",
+                "The representative request uses a JSON body for a GET "
+                "collection endpoint. Put the patient identifier in the path "
+                "and cursor/limit/filter values in query parameters, or label "
+                "the example as a POST request if that is intended.",
+            )
+        ]
+
+    return []
+
+
 def _check_caller_triggered_alert_endpoint(
     text: str,
 ) -> list[tuple[str, str]]:
@@ -1075,6 +1457,16 @@ def validate_trace_semantics(
         _check_outbox_publish_safety(text, sql),
         _check_patient_identifier_sensitivity(text),
         _check_confirmed_architecture_decision(text, source_text),
+        _check_btree_gist_extension(sql),
+        _check_sql_clause_order(text),
+        _check_cursor_tiebreaker(text),
+        _check_notification_before_critical_check(text),
+        _check_critical_function_rule_artifact(text, sql),
+        _check_undefined_routing_fields(text, sql),
+        _check_no_on_call_handler_missing(text),
+        _check_ingest_idempotency_missing(text, sql),
+        _check_api_core_logic_mismatch(text),
+        _check_get_request_body(text),
         _check_caller_triggered_alert_endpoint(text),
     )
 

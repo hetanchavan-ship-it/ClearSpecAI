@@ -1211,7 +1211,103 @@ def build_repair_user_message(
             "using a PostgreSQL exclusion constraint or transactionally "
             "enforced overlap validation."
         )
-        
+
+    if "TRACE_BTREE_GIST_MISSING" in issue_codes:
+        mandatory_fixes.append(
+            "- The PostgreSQL schema uses a GiST exclusion constraint with "
+            "equality operators on text or UUID columns. Add "
+            "'CREATE EXTENSION IF NOT EXISTS btree_gist;' before creating "
+            "the affected table."
+        )
+
+    if "TRACE_SQL_CLAUSE_ORDER_INVALID" in issue_codes:
+        mandatory_fixes.append(
+            "- Rewrite the SQL so every WHERE and AND condition appears "
+            "before ORDER BY and LIMIT. Do not append filtering conditions "
+            "after ORDER BY or LIMIT."
+        )
+
+    if "TRACE_CURSOR_TIEBREAKER_MISSING" in issue_codes:
+        mandatory_fixes.append(
+            "- Use deterministic compound cursor pagination. Sort by the "
+            "primary timestamp plus a unique ID tie-breaker, and apply both "
+            "values in the cursor WHERE condition. For descending order, use "
+            "collection_ts DESC, id DESC with direction-compatible '<' "
+            "comparisons."
+        )
+
+    if (
+        "TRACE_NOTIFICATION_BEFORE_CRITICAL_CHECK"
+        in issue_codes
+    ):
+        mandatory_fixes.append(
+            "- Do not create a notification before server-side criticality "
+            "validation succeeds. During ingestion, persist only the lab "
+            "result and an outbox criticality-check event. Create the "
+            "notification later only when the worker validates that the "
+            "result is critical."
+        )
+
+    if (
+        "TRACE_CRITICAL_FUNCTION_WITHOUT_RULE_ARTIFACT"
+        in issue_codes
+    ):
+        mandatory_fixes.append(
+            "- A criticality-validation function must be backed by either "
+            "a versioned critical-threshold schema or an explicit external "
+            "clinical-rules service. Define test code, normalized unit, "
+            "comparator, threshold value, effective dates, approval state, "
+            "version selection, and audit fields."
+        )
+
+    if "TRACE_UNDEFINED_ROUTING_FIELDS" in issue_codes:
+        mandatory_fixes.append(
+            "- Do not reference facility, department, care team, or routing "
+            "fields that are absent from the schema or query result. Add the "
+            "required routing fields to the appropriate entity and select "
+            "them explicitly before using them."
+        )
+
+    if (
+        "TRACE_NO_ON_CALL_HANDLER_MISSING"
+        in issue_codes
+    ):
+        mandatory_fixes.append(
+            "- Explicitly handle the case where no active on-call physician "
+            "exists. Persist an unassigned critical-alert or escalation "
+            "record, create an audit event, and invoke the defined fallback "
+            "workflow. Do not silently continue or return an ordinary "
+            "validation error."
+        )
+
+    if (
+        "TRACE_INGEST_IDEMPOTENCY_MISSING"
+        in issue_codes
+    ):
+        mandatory_fixes.append(
+            "- Persist ingestion idempotency on the lab result or a dedicated "
+            "ingestion-request table. Enforce it atomically with a UNIQUE "
+            "constraint such as source_system plus source_result_id plus "
+            "source_version, or a stored Idempotency-Key. Do not rely on a "
+            "notification record to deduplicate result ingestion."
+        )
+
+    if "TRACE_API_CORE_LOGIC_MISMATCH" in issue_codes:
+        mandatory_fixes.append(
+            "- Ensure every major core-logic workflow has a matching API or "
+            "event-ingestion contract. If ingest_lab_result is defined, add "
+            "the corresponding secured internal ingestion endpoint and its "
+            "request, response, idempotency, authorization, and error rules."
+        )
+
+    if "TRACE_GET_REQUEST_BODY" in issue_codes:
+        mandatory_fixes.append(
+            "- Do not show a JSON request body for a GET endpoint. Put "
+            "resource identifiers in the path and filtering, cursor, and "
+            "limit values in query parameters. Represent the example as an "
+            "HTTP request line."
+        )
+
     mandatory_fix_text = (
         "\n".join(mandatory_fixes)
         if mandatory_fixes

@@ -54,11 +54,18 @@ MAX_ATTEMPTS = int(
 )
 
 OUTPUT_REPAIR_ATTEMPTS = int(
-    os.getenv("OUTPUT_REPAIR_ATTEMPTS", "1")
+    os.getenv("OUTPUT_REPAIR_ATTEMPTS", "2")
 )
 
 TIMEOUT_SECONDS = float(
     os.getenv("OPENROUTER_TIMEOUT_SECONDS", "240")
+)
+
+TRACE_ALLOW_REVIEW_WARNINGS = (
+    os.getenv("TRACE_ALLOW_REVIEW_WARNINGS", "true")
+    .strip()
+    .lower()
+    in {"1", "true", "yes", "on"}
 )
 
 client = AsyncOpenAI(
@@ -66,6 +73,23 @@ client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
     timeout=TIMEOUT_SECONDS,
 )
+
+
+# These trace issues are important architecture-review findings, but they do
+# not make the Markdown artifact structurally unusable. After all automatic
+# correction attempts are exhausted, the best output may be returned with an
+# explicit review section instead of failing the entire pipeline.
+_HARD_TRACE_VALIDATION_CODES = {
+    # The artifact is absent or too incomplete to review.
+    "TRACE_TOO_SHORT",
+    "TRACE_SECTION_MISSING",
+    "TRACE_SQL_BLOCK_MISSING",
+    "TRACE_TABLE_DDL_MISSING",
+    "TRACE_DISCLAIMER_MISSING",
+
+    # The stage itself or required output contract is invalid.
+    "UNKNOWN_STAGE",
+}
 
 
 def _extract_text(content: Any) -> str:
@@ -356,6 +380,66 @@ def _validation_failure_detail(
     )
 
 
+def _trace_has_only_review_issues(
+    validation_result: ValidationResult,
+) -> bool:
+    """
+    Return True when the Technical Trace is structurally reviewable.
+
+    Semantic and architectural defects are returned as visible review
+    warnings after automatic correction attempts. Missing or fundamentally
+    malformed artifacts remain hard failures.
+    """
+
+    if validation_result.ok:
+        return False
+
+    issue_codes = {
+        issue.code
+        for issue in validation_result.issues
+    }
+
+    return not bool(
+        issue_codes
+        & _HARD_TRACE_VALIDATION_CODES
+    )
+
+def _append_trace_review_section(
+    output: str,
+    validation_result: ValidationResult,
+) -> str:
+    """
+    Add a visible review section while preserving the mandatory disclaimer as
+    the final line.
+    """
+
+    disclaimer = (
+        "> AI-generated design proposal — "
+        "validate before implementation."
+    )
+
+    base = output.rstrip()
+
+    if base.endswith(disclaimer):
+        base = base[: -len(disclaimer)].rstrip()
+
+    issue_lines = "\n".join(
+        f"- **{issue.code}:** {issue.message}"
+        for issue in validation_result.issues
+    )
+
+    return (
+        f"{base}\n\n"
+        "## Validation Review Required\n\n"
+        "> The model completed the Technical Trace, but deterministic "
+        "validation still found architecture-review items after automatic "
+        "correction. Do not implement the affected sections until these "
+        "items are resolved.\n\n"
+        f"{issue_lines}\n\n"
+        f"{disclaimer}"
+    )
+
+
 async def call_llm(
     system_msg: str,
     user_msg: str,
@@ -368,6 +452,10 @@ async def call_llm(
     deterministically. An invalid result is sent back to the model for one or
     more complete correction attempts before it can reach the frontend or
     MongoDB.
+
+    For Technical Trace only, advisory architecture-review issues may be
+    returned visibly after all correction attempts instead of failing the
+    entire pipeline. Structural and safety-critical failures remain blocked.
     """
 
     enhanced_system_message = (
@@ -387,10 +475,10 @@ async def call_llm(
         return generated_output
 
     validation_result = validate_output(
-    stage,
-    generated_output,
-    source_text=user_msg,
-)
+        stage,
+        generated_output,
+        source_text=user_msg,
+    )
 
     if validation_result.ok:
         logger.info(
@@ -434,10 +522,10 @@ async def call_llm(
         )
 
         repaired_validation = validate_output(
-    stage,
-    repaired_output,
-    source_text=user_msg,
-)
+            stage,
+            repaired_output,
+            source_text=user_msg,
+        )
 
         if repaired_validation.ok:
             logger.info(
@@ -462,6 +550,24 @@ async def call_llm(
         current_output = repaired_output
         current_validation = repaired_validation
 
+    if (
+        stage == "trace"
+        and TRACE_ALLOW_REVIEW_WARNINGS
+        and _trace_has_only_review_issues(
+            current_validation
+        )
+    ):
+        logger.warning(
+            "Returning Technical Trace with visible review warnings after "
+            "automatic correction. Remaining issues:\n%s",
+            current_validation.formatted_issues(),
+        )
+
+        return _append_trace_review_section(
+            current_output,
+            current_validation,
+        )
+
     raise HTTPException(
         status_code=502,
         detail=_validation_failure_detail(
@@ -477,5 +583,6 @@ __all__ = [
     "MAX_ATTEMPTS",
     "OUTPUT_REPAIR_ATTEMPTS",
     "TIMEOUT_SECONDS",
+    "TRACE_ALLOW_REVIEW_WARNINGS",
     "call_llm",
 ]
