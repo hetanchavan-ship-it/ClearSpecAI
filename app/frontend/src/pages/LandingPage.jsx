@@ -19,7 +19,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
-import logo from "@/assets/clearspecAI-logo-cropped.png";
+import logo from "@/assets/clearspecAI-logo.png";
 import { useAuth } from "@/context/AuthContext";
 
 import "@/styles/landing-futuristic.css";

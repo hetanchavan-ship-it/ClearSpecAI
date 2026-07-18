@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import logo from "@/assets/clearspecAI-logo-cropped.png";
+import logo from "@/assets/clearspecAI-logo.png";
 import { useAuth } from "@/context/AuthContext";
 
 import "@/styles/auth-futuristic.css";
