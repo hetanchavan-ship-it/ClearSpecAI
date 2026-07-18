@@ -1,15 +1,30 @@
 import logo from "@/assets/clearspecAI-logo.png";
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
   ChevronDown,
+  Clock3,
+  FileText,
   FileUp,
   History,
+  LoaderCircle,
   LogOut,
+  PanelLeft,
   Plus,
+  ShieldCheck,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -44,7 +59,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Markdown } from "@/components/ui/Markdown";
-import { ScanLoader } from "@/components/ui/ScanLoader";
+
+import "@/styles/workstation-futuristic.css";
 
 const DOMAINS = [
   { value: "general", label: "General" },
@@ -54,6 +70,51 @@ const DOMAINS = [
   { value: "logistics", label: "Logistics" },
   { value: "saas", label: "SaaS" },
 ];
+
+const HINTS = {
+  stories: {
+    n: "02",
+    eyebrow: "NORMALISE",
+    t: "Standardised User Stories",
+    d: "Transform raw stakeholder material into INVEST-oriented user stories with explicit assumptions, measurable acceptance criteria, priorities and estimates.",
+  },
+  gap: {
+    n: "03",
+    eyebrow: "AUDIT",
+    t: "Gap & Conflict Analysis",
+    d: "Expose ambiguity, missing requirements, contradictions, delivery risks and stakeholder decisions before implementation begins.",
+  },
+  trace: {
+    n: "04",
+    eyebrow: "ARCHITECT",
+    t: "Technical Traceability",
+    d: "Generate traceable database, API, workflow, security and test artifacts—with deterministic validation and visible review warnings.",
+  },
+};
+
+const STAGES = [
+  { key: "stories", number: "02", label: "Stories" },
+  { key: "gap", number: "03", label: "Gap Analysis" },
+  { key: "trace", number: "04", label: "Technical Trace" },
+];
+
+function getErrorMessage(error) {
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  if (detail && typeof detail === "object") {
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      return "Pipeline failed.";
+    }
+  }
+
+  return error?.message || "Pipeline failed.";
+}
 
 export default function Workstation() {
   const { user, logout } = useAuth();
@@ -71,24 +132,38 @@ export default function Workstation() {
   const [busyClean, setBusyClean] = useState(false);
   const [busyAnalyze, setBusyAnalyze] = useState(false);
   const [busyTrace, setBusyTrace] = useState(false);
+  const [busyUpload, setBusyUpload] = useState(false);
 
   const [tab, setTab] = useState("stories");
   const [history, setHistory] = useState([]);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
   const fileRef = useRef(null);
+  const historyRequestedRef = useRef(false);
 
-  const loadHistory = async () => {
+  const isBusy = busyClean || busyAnalyze || busyTrace;
+  const traceNeedsReview = useMemo(
+    () => /Validation Review Required/i.test(traceMd),
+    [traceMd]
+  );
+
+  const loadHistory = useCallback(async () => {
     try {
       const items = await csApi.history();
-      setHistory(items);
+      setHistory(Array.isArray(items) ? items : []);
     } catch (error) {
       console.error("Could not load history:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // React StrictMode runs effects twice in development. This guard prevents
+    // duplicate history requests without disabling StrictMode.
+    if (historyRequestedRef.current) return;
+
+    historyRequestedRef.current = true;
     void loadHistory();
-   }, []);
+  }, [loadHistory]);
 
   const resetWorkspace = () => {
     setHistoryId(null);
@@ -99,68 +174,87 @@ export default function Workstation() {
     setGapMd("");
     setTraceMd("");
     setTab("stories");
-  }; 
+    setMobileHistoryOpen(false);
+
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
+  };
+
   const onClean = async () => {
     if (rawText.trim().length < 10) {
-      toast.error("Add at least 10 characters of input.");
+      toast.error("Add at least 10 characters of stakeholder input.");
       return;
     }
 
-    setBusyClean(true);
     setStoriesMd("");
     setGapMd("");
     setTraceMd("");
     setTab("stories");
+    setBusyClean(true);
+
+    let createdHistoryId = null;
+    let activeStage = "stories";
 
     try {
-      const { id, stories_md } = await csApi.clean({
+      const cleanResult = await csApi.clean({
         raw_text: rawText,
         domain,
       });
 
-      setHistoryId(id);
-      setStoriesMd(stories_md);
+      createdHistoryId = cleanResult.id;
+      setHistoryId(cleanResult.id);
+      setStoriesMd(cleanResult.stories_md);
       setBusyClean(false);
 
+      // One refresh is enough to expose the newly created record in History.
       await loadHistory();
 
-      // Run Gap Analysis
+      activeStage = "gap";
+      setTab("gap");
       setBusyAnalyze(true);
 
-      const { gap_md } = await csApi.analyze({
-        stories: stories_md,
+      const analyzeResult = await csApi.analyze({
+        stories: cleanResult.stories_md,
         context,
-        history_id: id,
+        history_id: cleanResult.id,
       });
 
-      setGapMd(gap_md);
+      setGapMd(analyzeResult.gap_md);
       setBusyAnalyze(false);
 
-      // Run Technical Trace
+      activeStage = "trace";
+      setTab("trace");
       setBusyTrace(true);
 
-      const { trace_md } = await csApi.trace({
-        stories: stories_md,
-        history_id: id,
+      const traceResult = await csApi.trace({
+        stories: cleanResult.stories_md,
+        history_id: cleanResult.id,
       });
 
-      setTraceMd(trace_md);
+      setTraceMd(traceResult.trace_md);
       setBusyTrace(false);
+      setTab("trace");
 
-      await loadHistory();
-
-      toast.success("Pipeline complete.");
+      toast.success(
+        /Validation Review Required/i.test(traceResult.trace_md)
+          ? "Pipeline complete with review items."
+          : "Pipeline complete."
+      );
     } catch (error) {
       console.error(error);
 
-      toast.error(
-        error?.response?.data?.detail || "Pipeline failed."
-      );
+      setTab(activeStage);
+      toast.error(getErrorMessage(error));
 
-      setBusyAnalyze(false);
-      setBusyTrace(false);
+      // A clean-stage record may already exist even if a later stage failed.
+      if (createdHistoryId) {
+        await loadHistory();
+      }
     } finally {
       setBusyClean(false);
+      setBusyAnalyze(false);
+      setBusyTrace(false);
     }
   };
 
@@ -169,25 +263,25 @@ export default function Workstation() {
 
     if (!file) return;
 
+    setBusyUpload(true);
+
     try {
       const { text, filename } = await csApi.extract(file);
 
       setRawText((previous) =>
         previous
-          ? `${previous}
-
---- ${filename} ---
-${text}`
+          ? `${previous}\n\n--- ${filename} ---\n${text}`
           : text
       );
 
-      toast.success(`Extracted from ${filename}`);
+      toast.success(`Extracted ${filename}`);
     } catch (error) {
       toast.error(
         error?.response?.data?.detail ||
-          "Could not parse file."
+          "Could not parse the selected file."
       );
     } finally {
+      setBusyUpload(false);
       event.target.value = "";
     }
   };
@@ -197,23 +291,31 @@ ${text}`
       const doc = await csApi.getHistory(id);
 
       setHistoryId(doc.id);
-
-      setRawText(doc.raw_text);
-      setDomain(doc.domain);
-
+      setRawText(doc.raw_text || "");
+      setDomain(doc.domain || "general");
+      setContext(doc.context || "");
       setStoriesMd(doc.stories_md || "");
       setGapMd(doc.gap_md || "");
       setTraceMd(doc.trace_md || "");
 
-      setTab("stories");
+      if (doc.trace_md) {
+        setTab("trace");
+      } else if (doc.gap_md) {
+        setTab("gap");
+      } else {
+        setTab("stories");
+      }
+
+      setMobileHistoryOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error("Could not load record.");
+      toast.error("Could not load this record.");
     }
   };
 
   const removeHistory = async (id, event) => {
-  event.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
 
     try {
       await csApi.deleteHistory(id);
@@ -222,7 +324,11 @@ ${text}`
         resetWorkspace();
       }
 
-      await loadHistory();
+      setHistory((items) =>
+        items.filter((item) => item.id !== id)
+      );
+
+      toast.success("History record deleted.");
     } catch (error) {
       console.error(error);
       toast.error("Delete failed.");
@@ -242,231 +348,237 @@ ${text}`
     }
   };
 
+  const stageState = (stageKey) => {
+    if (stageKey === "stories") {
+      if (busyClean) return "running";
+      if (storiesMd) return "complete";
+      return "idle";
+    }
+
+    if (stageKey === "gap") {
+      if (busyAnalyze) return "running";
+      if (gapMd) return "complete";
+      return "idle";
+    }
+
+    if (busyTrace) return "running";
+    if (traceMd && traceNeedsReview) return "review";
+    if (traceMd) return "complete";
+    return "idle";
+  };
+
+  const currentStageLabel = busyClean
+    ? "NORMALISING INPUT"
+    : busyAnalyze
+      ? "AUDITING REQUIREMENTS"
+      : busyTrace
+        ? "GENERATING TRACE"
+        : traceNeedsReview
+          ? "COMPLETE · REVIEW REQUIRED"
+          : traceMd
+            ? "PIPELINE COMPLETE"
+            : "SYSTEM READY";
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-white text-gray-900 overflow-hidden">
+    <div className="cs-workstation">
+      <div className="cs-workstation__grid" aria-hidden="true" />
+      <div className="cs-workstation__glow" aria-hidden="true" />
 
-      {/* ================= HEADER ================= */}
+      <header className="cs-topbar">
+        <div className="cs-brand">
+          <button
+            type="button"
+            className="cs-mobile-history-button"
+            aria-label="Open history"
+            onClick={() => setMobileHistoryOpen(true)}
+          >
+            <PanelLeft size={18} />
+          </button>
 
-      <header className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-white">
+          <div className="cs-brand__logo-wrap">
+            <img
+              src={logo}
+              alt="ClearSpec AI"
+              className="cs-brand__logo-image"
+            />
+          </div>
 
-        <div className="flex items-center gap-3">
-
-          <img
-  src={logo}
-  alt="ClearSpec AI Logo"
-  className="h-8 w-auto object-contain"
-/>
-
-          <span className="font-mono text-xs uppercase tracking-overline">
-            ClearSpec / AI
-          </span>
-
-          <span className="text-gray-300">|</span>
-
-          <span className="hidden sm:inline text-xs font-mono uppercase tracking-overline text-gray-500">
-            Requirement Engineering Workstation
-          </span>
-
+          <div className="cs-brand__copy">
+            <span className="cs-brand__divider" aria-hidden="true" />
+            <span className="cs-brand__descriptor">
+              REQUIREMENT ENGINEERING WORKSTATION
+            </span>
+          </div>
         </div>
 
-        <DropdownMenu>
+        <div className="cs-topbar__actions">
+          <div
+            className={`cs-system-state ${
+              isBusy ? "is-running" : ""
+            } ${traceNeedsReview ? "is-review" : ""}`}
+          >
+            <span className="cs-system-state__pulse" />
+            <Activity size={14} />
+            <span>{currentStageLabel}</span>
+          </div>
 
-          <DropdownMenuTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                data-testid="user-menu-button"
+                className="cs-user-button"
+                aria-label="Open user menu"
+              >
+                <span className="cs-user-button__avatar">
+                  {user?.name?.[0]?.toUpperCase() || "U"}
+                </span>
 
-            <button
-              data-testid="user-menu-button"
-              className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 transition-colors"
+                <span className="cs-user-button__identity">
+                  <span className="cs-user-button__email">
+                    {user?.email}
+                  </span>
+                  <span className="cs-user-button__role">
+                    AUTHENTICATED OPERATOR
+                  </span>
+                </span>
+
+                <ChevronDown size={15} />
+              </button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              className="cs-user-menu"
             >
+              <DropdownMenuLabel className="cs-user-menu__label">
+                SIGNED IN
+              </DropdownMenuLabel>
 
-              <div className="w-6 h-6 bg-klein text-white flex items-center justify-center text-xs font-mono">
-                {user?.name?.[0]?.toUpperCase() || "U"}
-              </div>
+              <DropdownMenuItem
+                disabled
+                className="cs-user-menu__item"
+              >
+                {user?.name || user?.email}
+              </DropdownMenuItem>
 
-              <span className="text-sm font-mono">
-                {user?.email}
-              </span>
+              <DropdownMenuSeparator className="cs-user-menu__separator" />
 
-              <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
-
-            </button>
-
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent className="w-56 rounded-none border-gray-200">
-
-            <DropdownMenuLabel className="font-mono text-xs uppercase tracking-overline text-gray-500">
-              Signed In
-            </DropdownMenuLabel>
-
-            <DropdownMenuItem disabled className="font-mono text-xs">
-              {user?.name}
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem
-              data-testid="logout-menu-item"
-              className="cursor-pointer rounded-none"
-              onClick={() => {
-                logout();
-                nav("/login", { replace: true });
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-
-          </DropdownMenuContent>
-
-        </DropdownMenu>
-
+              <DropdownMenuItem
+                data-testid="logout-menu-item"
+                className="cs-user-menu__item cs-user-menu__logout"
+                onClick={() => {
+                  logout();
+                  nav("/login", { replace: true });
+                }}
+              >
+                <LogOut size={16} />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
-      {/* ================= MAIN BODY ================= */}
+      <div className="cs-workstation__body">
+        <HistoryPanel
+          history={history}
+          historyId={historyId}
+          fmtDate={fmtDate}
+          onOpen={openHistory}
+          onRemove={removeHistory}
+          onReset={resetWorkspace}
+          className="cs-history-panel--desktop"
+        />
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_1.2fr] overflow-hidden">
-                {/* ================= SIDEBAR ================= */}
-
-        <aside className="hidden lg:flex flex-col border-r border-gray-200 bg-[#FAFAF7]">
-
-          <div className="h-12 px-4 border-b border-gray-200 flex items-center justify-between">
-
-            <span className="flex items-center gap-2 text-xs font-mono uppercase tracking-overline text-gray-600">
-              <History className="w-3.5 h-3.5" />
-              History
-            </span>
-
-            <button
-              data-testid="new-record-button"
-              onClick={resetWorkspace}
-              className="flex items-center gap-1 text-xs font-mono text-klein hover:underline"
-            >
-              <Plus className="w-3 h-3" />
-              New
-            </button>
-
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-
-            {history.length === 0 ? (
-
-              <div className="p-4 text-xs font-mono text-gray-400">
-                No records yet. Run your first analysis →
+        {mobileHistoryOpen && (
+          <div
+            className="cs-mobile-history-overlay"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setMobileHistoryOpen(false);
+              }
+            }}
+          >
+            <div className="cs-mobile-history-sheet">
+              <div className="cs-mobile-history-sheet__top">
+                <span>WORKSPACE HISTORY</span>
+                <button
+                  type="button"
+                  aria-label="Close history"
+                  onClick={() => setMobileHistoryOpen(false)}
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-            ) : (
+              <HistoryPanel
+                history={history}
+                historyId={historyId}
+                fmtDate={fmtDate}
+                onOpen={openHistory}
+                onRemove={removeHistory}
+                onReset={resetWorkspace}
+                className="cs-history-panel--mobile"
+              />
+            </div>
+          </div>
+        )}
 
-              history.map((item) => (
+        <section className="cs-input-panel">
+          <div className="cs-panel-heading">
+            <div>
+              <span className="cs-panel-heading__number">01</span>
+              <span className="cs-panel-heading__slash">/</span>
+              <span className="cs-panel-heading__title">
+                SOURCE INPUT
+              </span>
+            </div>
 
-                <button
-                  key={item.id}
-                  data-testid={`history-item-${item.id}`}
-                  onClick={() => openHistory(item.id)}
-                  className={`group w-full border-b border-gray-200 p-3 text-left transition-colors hover:bg-white ${
-                    historyId === item.id
-                      ? "bg-white border-l-2 border-l-klein"
-                      : ""
-                  }`}
-                >
-
-                  <div className="flex items-start justify-between gap-2">
-
-                    <div className="min-w-0 flex-1">
-
-                      <div className="truncate text-sm text-gray-900">
-                        {item.title}
-                      </div>
-
-                      <div className="mt-1 flex items-center gap-2">
-
-                        <span className="border border-gray-200 px-1 text-[10px] font-mono uppercase tracking-overline text-klein">
-                          {item.domain}
-                        </span>
-
-                        <span className="text-[11px] font-mono text-gray-400">
-                          {fmtDate(item.created_at)}
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                    <Trash2
-                      className="w-3.5 h-3.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
-                      onClick={(event) => removeHistory(item.id, event)}
-                    />
-
-                  </div>
-
-                </button>
-
-              ))
-
-            )}
-
+            <div className="cs-panel-heading__meta">
+              <FileText size={13} />
+              <span>{rawText.length.toLocaleString()} CHARS</span>
+            </div>
           </div>
 
-        </aside>
-
-        {/* ================= INPUT PANEL ================= */}
-
-        <section className="flex flex-col border-r border-gray-200 overflow-hidden">
-
-          <div className="h-12 border-b border-gray-200 px-6 flex items-center justify-between">
-
-            <span className="text-xs font-mono uppercase tracking-overline text-gray-600">
-              01 — Input
-            </span>
-
-            <span className="text-xs font-mono text-gray-400">
-              {rawText.length} chars
-            </span>
-
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
-
-            <div className="grid grid-cols-2 gap-4">
-
-              <div className="space-y-2">
-
-                <Label className="text-xs font-mono uppercase tracking-overline text-gray-500">
-                  Domain
+          <div className="cs-input-panel__scroll">
+            <div className="cs-control-grid">
+              <div className="cs-field">
+                <Label className="cs-field__label">
+                  DOMAIN PROFILE
                 </Label>
 
                 <Select
                   value={domain}
                   onValueChange={setDomain}
+                  disabled={isBusy}
                 >
-                                      <SelectTrigger
+                  <SelectTrigger
                     data-testid="domain-select-trigger"
-                    className="rounded-none border-gray-300 font-mono text-sm"
+                    className="cs-select-trigger"
                   >
                     <SelectValue />
                   </SelectTrigger>
 
-                  <SelectContent className="rounded-none">
+                  <SelectContent className="cs-select-content">
                     {DOMAINS.map((item) => (
                       <SelectItem
                         key={item.value}
                         value={item.value}
                         data-testid={`domain-option-${item.value}`}
-                        className="rounded-none font-mono text-sm"
+                        className="cs-select-item"
                       >
                         {item.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
-
                 </Select>
-
               </div>
 
-              <div className="space-y-2">
-
-                <Label className="text-xs font-mono uppercase tracking-overline text-gray-500">
-                  Transcript (PDF / DOCX / TXT)
+              <div className="cs-field">
+                <Label className="cs-field__label">
+                  SOURCE DOCUMENT
                 </Label>
 
                 <input
@@ -479,142 +591,191 @@ ${text}`
                 />
 
                 <Button
+                  type="button"
                   variant="outline"
                   data-testid="upload-button"
+                  disabled={busyUpload || isBusy}
                   onClick={() => fileRef.current?.click()}
-                  className="w-full h-10 justify-start rounded-none border-gray-300 font-mono text-sm hover:bg-gray-50"
+                  className="cs-upload-button"
                 >
-                  <FileUp className="mr-2 h-4 w-4" />
-                  Upload file
+                  {busyUpload ? (
+                    <LoaderCircle
+                      className="cs-spin"
+                      size={16}
+                    />
+                  ) : (
+                    <FileUp size={16} />
+                  )}
+                  {busyUpload ? "Extracting..." : "Upload PDF / DOCX / TXT"}
                 </Button>
-
               </div>
-
             </div>
 
-            <div className="space-y-2">
+            <div className="cs-field cs-field--grow">
+              <div className="cs-field__heading-row">
+                <Label className="cs-field__label">
+                  RAW STAKEHOLDER NOTES
+                </Label>
 
-              <Label className="text-xs font-mono uppercase tracking-overline text-gray-500">
-                Raw stakeholder notes
-              </Label>
+                <span className="cs-field__hint">
+                  MINIMUM 10 CHARACTERS
+                </span>
+              </div>
 
               <Textarea
                 data-testid="raw-text-input"
                 value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                placeholder={`Paste meeting notes, emails, BRD snippets, voice transcripts...
+                disabled={isBusy}
+                onChange={(event) =>
+                  setRawText(event.target.value)
+                }
+                placeholder={`Paste meeting notes, emails, BRD excerpts or transcript text...
 
 Example:
-"We need a portal where doctors can quickly view patient lab reports.
-Patients should receive SMS or email notifications when reports are ready.
-The system must support urgent reports and allow filtering by date."`}
-                className="min-h-[280px] rounded-none border-gray-300 font-body text-sm focus-visible:border-[#002FA7] focus-visible:ring-1 focus-visible:ring-[#002FA7]"
+"Doctors need faster access to consolidated laboratory results.
+Critical values must notify the on-call physician within sixty seconds."`}
+                className="cs-textarea cs-textarea--primary"
               />
-
             </div>
 
-            <div className="space-y-2">
+            <div className="cs-field">
+              <div className="cs-field__heading-row">
+                <Label className="cs-field__label">
+                  EXISTING SYSTEM CONTEXT
+                </Label>
 
-              <Label className="text-xs font-mono uppercase tracking-overline text-gray-500">
-                Existing system context (Optional)
-              </Label>
+                <span className="cs-field__optional">OPTIONAL</span>
+              </div>
 
               <Textarea
                 data-testid="context-input"
                 value={context}
-                onChange={(e) => setContext(e.target.value)}
-                placeholder="Backlog snippets, existing workflows, technical constraints..."
-                className="min-h-[110px] rounded-none border-gray-300 font-body text-sm focus-visible:border-[#002FA7] focus-visible:ring-1 focus-visible:ring-[#002FA7]"
+                disabled={isBusy}
+                onChange={(event) =>
+                  setContext(event.target.value)
+                }
+                placeholder="Backlog fragments, current workflows, integrations, architecture constraints..."
+                className="cs-textarea cs-textarea--context"
               />
+            </div>
+          </div>
 
+          <div className="cs-pipeline-console">
+            <div className="cs-pipeline-console__stages">
+              {STAGES.map((stage) => {
+                const state = stageState(stage.key);
+
+                return (
+                  <div
+                    key={stage.key}
+                    className={`cs-mini-stage is-${state}`}
+                  >
+                    <span className="cs-mini-stage__dot">
+                      {state === "running" ? (
+                        <LoaderCircle
+                          className="cs-spin"
+                          size={12}
+                        />
+                      ) : state === "complete" ? (
+                        <CheckCircle2 size={12} />
+                      ) : state === "review" ? (
+                        <AlertTriangle size={12} />
+                      ) : (
+                        <Clock3 size={12} />
+                      )}
+                    </span>
+                    <span>{stage.number}</span>
+                  </div>
+                );
+              })}
             </div>
 
-          </div>
-
-          <div className="border-t border-gray-200 bg-[#FAFAF7] p-4">
-
             <Button
+              type="button"
               data-testid="run-pipeline-button"
               onClick={onClean}
-              disabled={busyClean || busyAnalyze || busyTrace}
-              className="h-12 w-full rounded-none bg-klein text-white hover:bg-[#00258A]"
+              disabled={isBusy || busyUpload}
+              className="cs-run-button"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              {isBusy ? (
+                <LoaderCircle
+                  className="cs-spin"
+                  size={18}
+                />
+              ) : (
+                <Sparkles size={18} />
+              )}
 
-              {busyClean
-                ? "Standardising..."
-                : busyAnalyze
-                ? "Analysing..."
-                : busyTrace
-                ? "Tracing..."
-                : "Clean → Analyze → Trace"}
-
+              <span>
+                {busyClean
+                  ? "STANDARDISING REQUIREMENTS"
+                  : busyAnalyze
+                    ? "AUDITING GAPS & CONFLICTS"
+                    : busyTrace
+                      ? "GENERATING TECHNICAL TRACE"
+                      : "RUN CLEARSPEC AI PIPELINE"}
+              </span>
             </Button>
-                        <p className="mt-2 text-center text-[11px] font-mono text-gray-400">
-              Pipeline runs three stages sequentially · OpenRouter
-            </p>
 
+            <div className="cs-pipeline-console__foot">
+              <ShieldCheck size={13} />
+              <span>
+                THREE-STAGE VALIDATION · AUTOMATIC REPAIR ·
+                REVIEW WARNINGS
+              </span>
+            </div>
           </div>
-
         </section>
 
-        {/* ================= RESULTS PANEL ================= */}
-
-        <section className="flex flex-col overflow-hidden bg-white">
-
+        <section className="cs-results-panel">
           <Tabs
             value={tab}
             onValueChange={setTab}
-            className="flex h-full flex-col"
+            className="cs-results-tabs"
           >
+            <div className="cs-results-tabs__top">
+              <TabsList className="cs-tabs-list">
+                {STAGES.map((stage) => {
+                  const state = stageState(stage.key);
 
-            <div className="flex h-12 items-center justify-between border-b border-gray-200 pr-6">
-
-              <TabsList className="h-12 gap-0 rounded-none bg-transparent p-0">
-
-                <TabsTrigger
-                  value="stories"
-                  data-testid="tab-stories"
-                  className="h-12 rounded-none border-b-2 border-transparent px-5 font-mono text-xs uppercase tracking-overline text-gray-500 data-[state=active]:border-klein data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
-                >
-                  02 / Stories
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value="gap"
-                  data-testid="tab-gap"
-                  className="h-12 rounded-none border-b-2 border-transparent px-5 font-mono text-xs uppercase tracking-overline text-gray-500 data-[state=active]:border-klein data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
-                >
-                  03 / Gap Analysis
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value="trace"
-                  data-testid="tab-trace"
-                  className="h-12 rounded-none border-b-2 border-transparent px-5 font-mono text-xs uppercase tracking-overline text-gray-500 data-[state=active]:border-klein data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
-                >
-                  04 / Technical Trace
-                </TabsTrigger>
-
+                  return (
+                    <TabsTrigger
+                      key={stage.key}
+                      value={stage.key}
+                      data-testid={`tab-${stage.key}`}
+                      className="cs-tab-trigger"
+                    >
+                      <span className="cs-tab-trigger__number">
+                        {stage.number}
+                      </span>
+                      <span className="cs-tab-trigger__label">
+                        {stage.label}
+                      </span>
+                      <span
+                        className={`cs-tab-trigger__state is-${state}`}
+                        aria-label={`${stage.label}: ${state}`}
+                      />
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
 
-              <span className="hidden text-[11px] font-mono text-gray-400 md:block">
-                Powered by ClearSpec AI
-              </span>
-
+              <div className="cs-results-tabs__engine">
+                <span className="cs-results-tabs__engine-dot" />
+                OPENROUTER / VALIDATED
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8">
-
+            <div className="cs-result-viewport">
               <TabsContent
                 value="stories"
-                className="mt-0"
+                className="cs-tab-content"
                 data-testid="panel-stories"
               >
-
                 {busyClean && (
-                  <ScanLoader
-                    label="Generating user stories"
+                  <PipelineLoader
+                    label="Standardising user stories"
+                    stage="02"
                     testId="loader-stories"
                   />
                 )}
@@ -624,22 +785,22 @@ The system must support urgent reports and allow filtering by date."`}
                 )}
 
                 {!busyClean && storiesMd && (
-                  <Markdown testId="stories-md">
-                    {storiesMd}
-                  </Markdown>
+                  <ResultDocument
+                    stage="stories"
+                    markdown={storiesMd}
+                  />
                 )}
-
               </TabsContent>
 
               <TabsContent
                 value="gap"
-                className="mt-0"
+                className="cs-tab-content"
                 data-testid="panel-gap"
               >
-
                 {busyAnalyze && (
-                  <ScanLoader
-                    label="Auditing gaps & conflicts"
+                  <PipelineLoader
+                    label="Auditing gaps and conflicts"
+                    stage="03"
                     testId="loader-gap"
                   />
                 )}
@@ -649,22 +810,22 @@ The system must support urgent reports and allow filtering by date."`}
                 )}
 
                 {!busyAnalyze && gapMd && (
-                  <Markdown testId="gap-md">
-                    {gapMd}
-                  </Markdown>
+                  <ResultDocument
+                    stage="gap"
+                    markdown={gapMd}
+                  />
                 )}
-
               </TabsContent>
 
               <TabsContent
                 value="trace"
-                className="mt-0"
+                className="cs-tab-content"
                 data-testid="panel-trace"
               >
-
                 {busyTrace && (
-                  <ScanLoader
-                    label="Drafting technical artifacts"
+                  <PipelineLoader
+                    label="Building technical traceability"
+                    stage="04"
                     testId="loader-trace"
                   />
                 )}
@@ -674,76 +835,255 @@ The system must support urgent reports and allow filtering by date."`}
                 )}
 
                 {!busyTrace && traceMd && (
-                  <Markdown testId="trace-md">
-                    {traceMd}
-                  </Markdown>
+                  <ResultDocument
+                    stage="trace"
+                    markdown={traceMd}
+                    needsReview={traceNeedsReview}
+                  />
                 )}
-
               </TabsContent>
-
             </div>
-
           </Tabs>
-
         </section>
-
       </div>
-
     </div>
-
   );
 }
 
-/* ================= EMPTY STATE ================= */
+function HistoryPanel({
+  history,
+  historyId,
+  fmtDate,
+  onOpen,
+  onRemove,
+  onReset,
+  className = "",
+}) {
+  return (
+    <aside className={`cs-history-panel ${className}`}>
+      <div className="cs-history-panel__heading">
+        <div>
+          <History size={15} />
+          <span>HISTORY</span>
+          <span className="cs-history-panel__count">
+            {String(history.length).padStart(2, "0")}
+          </span>
+        </div>
 
-const HINTS = {
+        <button
+          type="button"
+          data-testid="new-record-button"
+          onClick={onReset}
+          className="cs-new-button"
+        >
+          <Plus size={14} />
+          NEW
+        </button>
+      </div>
 
-  stories: {
-    n: "02",
-    t: "Standardised User Stories",
-    d: "Paste raw stakeholder input on the left and run the pipeline. ClearSpec AI converts your notes into INVEST-compliant Agile user stories with clear acceptance criteria.",
-  },
+      <div className="cs-history-panel__list">
+        {history.length === 0 ? (
+          <div className="cs-history-empty">
+            <span className="cs-history-empty__icon">
+              <History size={20} />
+            </span>
+            <strong>NO RECORDS</strong>
+            <span>Run the pipeline to create your first trace.</span>
+          </div>
+        ) : (
+          history.map((item, index) => (
+            <article
+              key={item.id}
+              className={`cs-history-item ${
+                historyId === item.id ? "is-active" : ""
+              }`}
+            >
+              <button
+                type="button"
+                data-testid={`history-item-${item.id}`}
+                className="cs-history-item__open"
+                onClick={() => onOpen(item.id)}
+              >
+                <span className="cs-history-item__index">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
 
-  gap: {
-    n: "03",
-    t: "Gap & Conflict Analysis",
-    d: "Automatically detect ambiguity, missing requirements, contradictions, risks and unresolved stakeholder questions before development begins.",
-  },
+                <span className="cs-history-item__body">
+                  <span className="cs-history-item__title">
+                    {item.title}
+                  </span>
 
-  trace: {
-    n: "04",
-    t: "Technical Traceability",
-    d: "Generate database schema suggestions, REST APIs, business logic and implementation pseudocode directly from your approved user stories.",
-  },
+                  <span className="cs-history-item__meta">
+                    <span className="cs-history-item__domain">
+                      {item.domain}
+                    </span>
+                    <span>{fmtDate(item.created_at)}</span>
+                  </span>
+                </span>
+              </button>
 
-};
+              <button
+                type="button"
+                className="cs-history-item__delete"
+                aria-label={`Delete ${item.title}`}
+                onClick={(event) =>
+                  onRemove(item.id, event)
+                }
+              >
+                <Trash2 size={14} />
+              </button>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="cs-history-panel__footer">
+        <span className="cs-history-panel__status-dot" />
+        MONGODB ATLAS / SYNCED
+      </div>
+    </aside>
+  );
+}
+
+function ResultDocument({
+  stage,
+  markdown,
+  needsReview = false,
+}) {
+  return (
+    <article
+      className={`cs-result-document ${
+        needsReview ? "has-review" : ""
+      }`}
+    >
+      <div className="cs-result-document__rail">
+        <span>{stage.toUpperCase()}</span>
+
+        {needsReview ? (
+          <span className="cs-result-document__review-badge">
+            <AlertTriangle size={13} />
+            REVIEW REQUIRED
+          </span>
+        ) : (
+          <span className="cs-result-document__validated-badge">
+            <CheckCircle2 size={13} />
+            VALIDATED
+          </span>
+        )}
+      </div>
+
+      <div className="cs-result-document__markdown">
+        <Markdown testId={`${stage}-md`}>
+          {markdown}
+        </Markdown>
+      </div>
+    </article>
+  );
+}
+
+function PipelineLoader({
+  label,
+  stage,
+  testId,
+}) {
+  return (
+    <div
+      className="cs-pipeline-loader"
+      data-testid={testId}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="cs-pipeline-loader__top">
+        <div className="cs-pipeline-loader__identity">
+          <span className="cs-pipeline-loader__stage">
+            {stage}
+          </span>
+
+          <div>
+            <span className="cs-pipeline-loader__eyebrow">
+              CLEARSPEC AI PROCESS
+            </span>
+            <strong>{label}</strong>
+          </div>
+        </div>
+
+        <span className="cs-pipeline-loader__active">
+          <span />
+          ACTIVE
+        </span>
+      </div>
+
+      <div className="cs-pipeline-loader__scanner">
+        <span />
+      </div>
+
+      <div className="cs-pipeline-loader__steps">
+        <div>
+          <span className="cs-pipeline-loader__chevron">
+            &gt;
+          </span>
+          Parsing validated input stream
+        </div>
+        <div>
+          <span className="cs-pipeline-loader__chevron">
+            &gt;
+          </span>
+          Invoking OpenRouter inference
+        </div>
+        <div>
+          <span className="cs-pipeline-loader__chevron">
+            &gt;
+          </span>
+          Running deterministic output checks
+        </div>
+      </div>
+
+      <div className="cs-pipeline-loader__foot">
+        <span>MODEL</span>
+        <strong>TENCENT / HY3 : FREE</strong>
+        <span>VALIDATOR</span>
+        <strong>ONLINE</strong>
+      </div>
+    </div>
+  );
+}
 
 function EmptyHint({ step }) {
-
   const hint = HINTS[step];
 
   return (
-
-    <div className="max-w-xl">
-
-      <div className="mb-3 text-xs font-mono uppercase tracking-overline text-klein">
-        Step {hint.n}
+    <div className="cs-empty-state">
+      <div className="cs-empty-state__index">
+        <span>{hint.n}</span>
+        <span>{hint.eyebrow}</span>
       </div>
 
-      <div className="mb-3 font-heading text-4xl text-gray-900">
-        {hint.t}
+      <h1>{hint.t}</h1>
+
+      <p>{hint.d}</p>
+
+      <div className="cs-empty-state__terminal">
+        <span className="cs-empty-state__prompt">
+          CLEARSPEC://
+        </span>
+        <span>AWAITING SOURCE INPUT</span>
+        <span className="cs-empty-state__cursor" />
       </div>
 
-      <p className="leading-relaxed text-gray-600">
-        {hint.d}
-      </p>
-
-      <div className="mt-8 border border-dashed border-gray-300 p-6 font-mono text-sm text-gray-400">
-        AWAITING INPUT // Run the pipeline to populate this panel.
+      <div className="cs-empty-state__grid">
+        <div>
+          <span>INPUT</span>
+          <strong>STAKEHOLDER MATERIAL</strong>
+        </div>
+        <div>
+          <span>ENGINE</span>
+          <strong>VALIDATED AI PIPELINE</strong>
+        </div>
+        <div>
+          <span>OUTPUT</span>
+          <strong>REVIEWABLE ARTIFACT</strong>
+        </div>
       </div>
-
     </div>
-
   );
-
 }
