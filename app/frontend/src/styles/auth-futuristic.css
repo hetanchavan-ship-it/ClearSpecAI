@@ -783,3 +783,138 @@
     height: 148px;
   }
 }
+/* =========================================================
+   Mobile and tablet pulsar visibility
+   ========================================================= */
+
+@media (max-width: 1279px) {
+  .cs-auth-reactor {
+    display: flex;
+    left: 50%;
+    top: 230px;
+    z-index: 1;
+
+    width: 290px;
+    height: 290px;
+
+    opacity: 0.58;
+  }
+
+  .cs-auth-orbit-plane-a {
+    width: 220px;
+    height: 220px;
+  }
+
+  .cs-auth-orbit-plane-b {
+    width: 200px;
+    height: 200px;
+  }
+
+  .cs-auth-orbit-plane-c {
+    width: 180px;
+    height: 180px;
+  }
+
+  .cs-auth-cube-scene {
+    width: 92px;
+    height: 92px;
+  }
+
+  .cs-auth-beam {
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 640px) {
+  .cs-auth-reactor {
+    top: 205px;
+
+    width: 250px;
+    height: 250px;
+
+    opacity: 0.5;
+  }
+
+  .cs-auth-orbit-plane-a {
+    width: 190px;
+    height: 190px;
+  }
+
+  .cs-auth-orbit-plane-b {
+    width: 172px;
+    height: 172px;
+  }
+
+  .cs-auth-orbit-plane-c {
+    width: 156px;
+    height: 156px;
+  }
+
+  .cs-auth-cube-scene {
+    width: 78px;
+    height: 78px;
+  }
+
+  .cs-auth-beam-diagonal-a,
+  .cs-auth-beam-diagonal-b {
+    display: none;
+  }
+}
+/* Mobile pulsar — aligned beside the ClearSpec AI logo */
+@media (max-width: 640px) {
+  .cs-auth-reactor {
+    display: flex;
+
+    left: auto;
+    right: 12px;
+    top: 34px;
+    z-index: 4;
+
+    width: 104px;
+    height: 104px;
+
+    opacity: 0.82;
+    transform: none;
+  }
+
+  .cs-auth-reactor-glow {
+    inset: 13%;
+  }
+
+  .cs-auth-orbit-plane-a {
+    width: 92px;
+    height: 92px;
+  }
+
+  .cs-auth-orbit-plane-b {
+    width: 82px;
+    height: 82px;
+  }
+
+  .cs-auth-orbit-plane-c {
+    width: 72px;
+    height: 72px;
+  }
+
+  .cs-auth-cube-scene {
+    width: 42px;
+    height: 42px;
+  }
+
+  .cs-auth-orbit-dot {
+    width: 7px;
+    height: 7px;
+    right: -3px;
+  }
+
+  .cs-auth-beam {
+    width: 4px;
+    height: 150px;
+  }
+
+  .cs-auth-beam-horizontal,
+  .cs-auth-beam-diagonal-a,
+  .cs-auth-beam-diagonal-b {
+    display: none;
+  }
+}

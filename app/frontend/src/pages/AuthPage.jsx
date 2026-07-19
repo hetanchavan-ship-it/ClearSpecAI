@@ -145,7 +145,7 @@ export default function AuthPage({ mode = "login" }) {
 
       {/* Global charging pulsar reactor */}
       <div
-        className="cs-auth-reactor pointer-events-none hidden xl:flex"
+        className="cs-auth-reactor pointer-events-none flex"
         aria-hidden="true"
       >
         <div className="cs-auth-reactor-glow" />
