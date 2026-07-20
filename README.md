@@ -1,5 +1,7 @@
 # ClearSpec AI
 
+[![ClearSpec AI CI](https://github.com/hetanchavan-ship-it/ClearSpecAI/actions/workflows/ci.yml/badge.svg)](https://github.com/hetanchavan-ship-it/ClearSpecAI/actions/workflows/ci.yml)
+
 **AI-powered requirements engineering workstation for transforming uncertain stakeholder input into reviewable software requirements and technical traceability artifacts.**
 
 ## Live Application
