@@ -25,6 +25,22 @@ Each stage is checked using deterministic validation rules. When output fails va
 
 ---
 
+## Application Screenshots
+
+### Landing Page
+
+[Open the complete ClearSpec AI landing-page screenshot](docs/screenshots/landing-page.png)
+
+### Requirements Engineering Workstation
+
+![ClearSpec AI workstation](docs/screenshots/workstation.png)
+
+### Technical Traceability Output
+
+![ClearSpec AI technical traceability artifacts](docs/screenshots/technical-trace.png)
+
+---
+
 ## Core Features
 
 ### Requirement normalisation
