@@ -68,6 +68,13 @@ TRACE_ALLOW_REVIEW_WARNINGS = (
     in {"1", "true", "yes", "on"}
 )
 
+GAP_ALLOW_REVIEW_WARNINGS = (
+    os.getenv("GAP_ALLOW_REVIEW_WARNINGS", "true")
+    .strip()
+    .lower()
+    in {"1", "true", "yes", "on"}
+)
+
 client = AsyncOpenAI(
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1",
@@ -583,6 +590,7 @@ __all__ = [
     "MAX_ATTEMPTS",
     "OUTPUT_REPAIR_ATTEMPTS",
     "TIMEOUT_SECONDS",
+    "GAP_ALLOW_REVIEW_WARNINGS",
     "TRACE_ALLOW_REVIEW_WARNINGS",
     "call_llm",
 ]
