@@ -1040,7 +1040,7 @@ function PipelineLoader({
 
       <div className="cs-pipeline-loader__foot">
         <span>MODEL</span>
-        <strong>TENCENT / HY3 : FREE</strong>
+        <strong>OPENAI / GPT-OSS-20B</strong>
         <span>VALIDATOR</span>
         <strong>ONLINE</strong>
       </div>
