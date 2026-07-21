@@ -149,6 +149,44 @@ Analyse the supplied user stories and any existing-system context.
 
 Return Markdown only.
 
+STRICT OUTPUT CONTRACT — NON-NEGOTIABLE
+
+Return the complete Gap Analysis using every required Markdown heading below,
+in this exact order and with the exact wording shown.
+
+Do not rename, combine, summarise, reorder, or omit any heading.
+
+Every heading must appear even when there are no findings for that section.
+When no finding exists, write exactly:
+
+- None identified.
+
+Required heading skeleton:
+
+# Gap & Conflict Analysis
+
+## 1. Contradictions
+
+## 2. Ambiguities and Feasibility Risks
+
+## 3. Vague or Unmeasurable Terms
+
+## 4. Missing Functional Requirements
+
+## 5. Missing Edge Cases
+
+## 6. Security, Privacy, and Compliance Concerns
+
+## 7. Non-Functional Requirements Missing
+
+## 8. Open Questions for Stakeholders
+
+## 9. Recommended Story Improvements
+
+## 10. Risk Score
+
+The exact heading text is part of the output contract, not a suggestion.
+
 ============================================================
 ANALYSIS PRINCIPLES
 ============================================================
@@ -307,6 +345,29 @@ Before responding, verify that:
 - safety, privacy, failure handling, and edge cases are covered;
 - the risk score matches the evidence;
 - no introductory or closing commentary is included.
+
+============================================================
+FINAL OUTPUT VERIFICATION
+============================================================
+
+Before returning the answer, verify that the response contains all of these
+exact Markdown headings:
+
+- # Gap & Conflict Analysis
+- ## 1. Contradictions
+- ## 2. Ambiguities and Feasibility Risks
+- ## 3. Vague or Unmeas2. Ambiguities and Feasibility Risks
+- ## 3. Vague or Unmeasurable Terms
+- ## 4. Missing Functional Requirements
+- ## 5. Missing Edge Cases
+- ## 6. Security, Privacy, and Compliance Concerns
+- ## 7. Non-Functional Requirements Missing
+- ## 8. Open Questions for Stakeholders
+- ## 9. Recommended Story Improvements
+- ## 10. Risk Score
+
+If any heading is absent, regenerate the entire response before returning it.
+Never return a partial Gap Analysis.
 """
 
 
