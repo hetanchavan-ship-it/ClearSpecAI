@@ -346,28 +346,7 @@ Before responding, verify that:
 - the risk score matches the evidence;
 - no introductory or closing commentary is included.
 
-============================================================
-FINAL OUTPUT VERIFICATION
-============================================================
 
-Before returning the answer, verify that the response contains all of these
-exact Markdown headings:
-
-- # Gap & Conflict Analysis
-- ## 1. Contradictions
-- ## 2. Ambiguities and Feasibility Risks
-- ## 3. Vague or Unmeas2. Ambiguities and Feasibility Risks
-- ## 3. Vague or Unmeasurable Terms
-- ## 4. Missing Functional Requirements
-- ## 5. Missing Edge Cases
-- ## 6. Security, Privacy, and Compliance Concerns
-- ## 7. Non-Functional Requirements Missing
-- ## 8. Open Questions for Stakeholders
-- ## 9. Recommended Story Improvements
-- ## 10. Risk Score
-
-If any heading is absent, regenerate the entire response before returning it.
-Never return a partial Gap Analysis.
 """
 
 
