@@ -468,9 +468,9 @@ def _append_trace_review_section(
     """
 
     disclaimer = (
-        "> AI-generated design proposal â€” "
-        "validate before implementation."
-    )
+    "> AI-generated design proposal \u2014 "
+    "validate before implementation."
+)
 
     base = output.rstrip()
 

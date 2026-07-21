@@ -19,7 +19,7 @@ from output_validator import ValidationResult  # noqa: E402
 
 
 TRACE_DISCLAIMER = (
-    "> AI-generated design proposal — "
+    "> AI-generated design proposal \u2014 "
     "validate before implementation."
 )
 
