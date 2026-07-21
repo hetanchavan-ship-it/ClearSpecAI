@@ -237,7 +237,7 @@ async def _request_completion(
                 temperature=0.2,
                 extra_body={
                     "reasoning": {
-                        "effort": "none",
+                        "effort": "low",
                         "exclude": True,
                     }
                 },
