@@ -386,6 +386,47 @@ def _validation_failure_detail(
         f"{validation_result.formatted_issues()}"
     )
 
+def _gap_has_only_review_issues(
+    validation_result: ValidationResult,
+) -> bool:
+    """
+    Return True only when every remaining Gap Analysis issue is reviewable.
+    """
+
+    if validation_result.ok:
+        return False
+
+    issue_codes = {
+        issue.code
+        for issue in validation_result.issues
+    }
+
+    return bool(issue_codes) and issue_codes.issubset(
+        _REVIEWABLE_GAP_VALIDATION_CODES
+    )
+
+
+def _append_gap_review_section(
+    output: str,
+    validation_result: ValidationResult,
+) -> str:
+    """
+    Add visible review warnings to an otherwise usable Gap Analysis.
+    """
+
+    issue_lines = "\n".join(
+        f"- **{issue.code}:** {issue.message}"
+        for issue in validation_result.issues
+    )
+
+    return (
+        f"{output.rstrip()}\n\n"
+        "## Validation Review Required\n\n"
+        "> Deterministic validation found a remaining classification "
+        "inconsistency after automatic correction. Review the affected "
+        "item before treating it as a confirmed contradiction.\n\n"
+        f"{issue_lines}"
+    )
 
 def _trace_has_only_review_issues(
     validation_result: ValidationResult,
@@ -410,6 +451,12 @@ def _trace_has_only_review_issues(
         issue_codes
         & _HARD_TRACE_VALIDATION_CODES
     )
+# Gap classification inconsistencies are reviewable when the artifact is
+# otherwise structurally complete.
+_REVIEWABLE_GAP_VALIDATION_CODES = {
+    "GAP_CONTRADICTION_CLASSIFICATION",
+}
+
 
 def _append_trace_review_section(
     output: str,
@@ -421,7 +468,7 @@ def _append_trace_review_section(
     """
 
     disclaimer = (
-        "> AI-generated design proposal — "
+        "> AI-generated design proposal â€” "
         "validate before implementation."
     )
 
@@ -556,6 +603,24 @@ async def call_llm(
 
         current_output = repaired_output
         current_validation = repaired_validation
+
+    if (
+        stage == "gap"
+        and GAP_ALLOW_REVIEW_WARNINGS
+        and _gap_has_only_review_issues(
+            current_validation
+        )
+    ):
+        logger.warning(
+            "Returning Gap Analysis with visible review warnings after "
+            "automatic correction. Remaining issues:\n%s",
+            current_validation.formatted_issues(),
+        )
+
+        return _append_gap_review_section(
+            current_output,
+            current_validation,
+        )
 
     if (
         stage == "trace"
