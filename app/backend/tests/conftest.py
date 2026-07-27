@@ -21,6 +21,10 @@ os.environ.setdefault(
     "clearspec_test",
 )
 os.environ.setdefault(
+    "CORS_ORIGINS",
+    "http://localhost:3000",
+)
+os.environ.setdefault(
     "JWT_SECRET",
     "test-jwt-secret-that-is-not-used-in-production",
 )

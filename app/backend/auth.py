@@ -6,6 +6,7 @@ import os
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional, TYPE_CHECKING
+from config import get_settings
 
 bcrypt = None
 try:
@@ -53,11 +54,11 @@ try:
 except Exception:  # pragma: no cover - pydantic is required at runtime
     raise RuntimeError("pydantic library is required")
 
-JWT_SECRET = os.environ.get("JWT_SECRET")
-if not JWT_SECRET:
-    raise RuntimeError("JWT_SECRET environment variable is required")
-JWT_ALG = os.environ.get("JWT_ALGORITHM", "HS256")
-JWT_EXP_DAYS = int(os.environ.get("JWT_EXP_DAYS", "7"))
+settings = get_settings()
+
+JWT_SECRET = settings.jwt_secret
+JWT_ALG = settings.jwt_algorithm
+JWT_EXP_DAYS = settings.jwt_exp_days
 
 security = HTTPBearer(auto_error=False)
 

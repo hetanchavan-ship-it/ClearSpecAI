@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Literal
+from config import get_settings
 
 from dotenv import load_dotenv
 from fastapi import HTTPException
@@ -33,46 +34,29 @@ logger = logging.getLogger(__name__)
 
 StageName = Literal["stories", "gap", "trace"]
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+settings = get_settings()
 
-if not OPENROUTER_API_KEY:
-    raise RuntimeError(
-        "OPENROUTER_API_KEY was not found in app/backend/.env."
-    )
-
-MODEL_NAME = os.getenv(
-    "OPENROUTER_MODEL",
-    "openai/gpt-oss-20b:free",
+OPENROUTER_API_KEY = (
+    settings.openrouter_api_key
 )
-
-MAX_COMPLETION_TOKENS = int(
-    os.getenv("OPENROUTER_MAX_TOKENS", "5000")
+MODEL_NAME = settings.openrouter_model
+MAX_COMPLETION_TOKENS = (
+    settings.openrouter_max_tokens
 )
-
-MAX_ATTEMPTS = int(
-    os.getenv("OPENROUTER_MAX_ATTEMPTS", "3")
+MAX_ATTEMPTS = (
+    settings.openrouter_max_attempts
 )
-
-OUTPUT_REPAIR_ATTEMPTS = int(
-    os.getenv("OUTPUT_REPAIR_ATTEMPTS", "2")
+OUTPUT_REPAIR_ATTEMPTS = (
+    settings.output_repair_attempts
 )
-
-TIMEOUT_SECONDS = float(
-    os.getenv("OPENROUTER_TIMEOUT_SECONDS", "240")
+TIMEOUT_SECONDS = (
+    settings.openrouter_timeout_seconds
 )
-
 TRACE_ALLOW_REVIEW_WARNINGS = (
-    os.getenv("TRACE_ALLOW_REVIEW_WARNINGS", "true")
-    .strip()
-    .lower()
-    in {"1", "true", "yes", "on"}
+    settings.trace_allow_review_warnings
 )
-
 GAP_ALLOW_REVIEW_WARNINGS = (
-    os.getenv("GAP_ALLOW_REVIEW_WARNINGS", "true")
-    .strip()
-    .lower()
-    in {"1", "true", "yes", "on"}
+    settings.gap_allow_review_warnings
 )
 
 client = AsyncOpenAI(

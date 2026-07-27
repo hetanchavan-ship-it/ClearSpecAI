@@ -11,9 +11,11 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, APIRouter
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+from config import get_settings
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
+settings = get_settings()
 
 from auth import (  # noqa: E402
     AuthResponse,
@@ -37,9 +39,12 @@ from prompts import (
 )
 
 # ---------- DB ----------
-mongo_url = os.environ["MONGO_URL"]
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ["DB_NAME"]]
+client = AsyncIOMotorClient(
+    settings.mongo_url
+)
+db = client[
+    settings.db_name
+]
 
 # ---------- App ----------
 app = FastAPI(title="ClearSpec AI")
@@ -361,7 +366,7 @@ app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=list(settings.cors_origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )
