@@ -35,6 +35,9 @@ export const authApi = {
 };
 
 export const csApi = {
+  config: () =>
+  api.get("/config").then((response) => response.data),
+
   clean: (payload) =>
     api.post("/clean", payload).then((response) => response.data),
 

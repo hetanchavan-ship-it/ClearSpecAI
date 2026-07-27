@@ -20,3 +20,4 @@ __pycache__/
 
 # Damaged Git backup
 .git_corrupt/
+app/frontend/build/

@@ -26,7 +26,7 @@ from auth import (  # noqa: E402
     verify_password,
 )
 from file_extract import extract_text  # noqa: E402
-from llm_client import call_llm  # noqa: E402
+from llm_client import MODEL_NAME, call_llm  # noqa: E402
 from prompts import (
     STORIES_SYSTEM,
     GAP_SYSTEM,
@@ -78,6 +78,12 @@ class HistoryItem(BaseModel):
 class ExtractResponse(BaseModel):
     text: str
     filename: str
+
+class PublicConfig(BaseModel):
+    inference_provider: str
+    model: str
+    model_label: str
+    validator: str
 
 
 # ---------- Auth routes ----------
@@ -143,6 +149,45 @@ async def extract(file: UploadFile = File(...), user=Depends(get_current_user)):
 
 
 # ---------- AI pipeline ----------
+def _model_display_name(
+    model_name: str,
+) -> str:
+    """
+    Convert an OpenRouter model identifier into a readable UI label.
+    """
+
+    cleaned = (model_name or "").strip()
+
+    provider, separator, model = cleaned.partition("/")
+
+    if not separator:
+        provider = "openrouter"
+        model = cleaned
+
+    is_free = model.endswith(":free")
+
+    if is_free:
+        model = model.removesuffix(":free")
+
+    provider_label = provider.replace(
+        "_",
+        " ",
+    ).upper()
+
+    model_label = model.replace(
+        "_",
+        " ",
+    ).upper()
+
+    display_name = (
+        f"{provider_label} / {model_label}"
+    )
+
+    if is_free:
+        display_name += " : FREE"
+
+    return display_name
+
 def _title_from(raw: str) -> str:
     snippet = (raw or "").strip().splitlines()[0] if raw else ""
     snippet = snippet[:80].strip()
@@ -292,6 +337,18 @@ async def delete_history(item_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Not found")
 
     return {"ok": True}
+
+
+@api.get("/config", response_model=PublicConfig)
+async def public_config():
+    return PublicConfig(
+        inference_provider="OpenRouter",
+        model=MODEL_NAME,
+        model_label=_model_display_name(
+            MODEL_NAME
+        ),
+        validator="online",
+    )
 
 
 @api.get("/")

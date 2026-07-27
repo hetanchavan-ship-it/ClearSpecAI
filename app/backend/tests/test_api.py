@@ -34,6 +34,23 @@ def test_root_health_endpoint(
         "status": "ok",
     }
 
+def test_public_config_exposes_safe_model_metadata(
+    api_harness,
+) -> None:
+    response = api_harness.client.get(
+        "/api/config"
+    )
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "inference_provider": "OpenRouter",
+        "model": "openai/gpt-oss-20b:free",
+        "model_label": (
+            "OPENAI / GPT-OSS-20B : FREE"
+        ),
+        "validator": "online",
+    }
 
 def test_register_and_duplicate_email(
     api_harness,

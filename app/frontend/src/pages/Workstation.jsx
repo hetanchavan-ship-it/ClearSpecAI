@@ -137,11 +137,27 @@ export default function Workstation() {
   const [tab, setTab] = useState("stories");
   const [history, setHistory] = useState([]);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const [publicConfig, setPublicConfig] = useState({
+  inference_provider: "OpenRouter",
+  model: "",
+  model_label: "OPENROUTER MODEL",
+  validator: "online",
+});
 
   const fileRef = useRef(null);
   const historyRequestedRef = useRef(false);
 
   const isBusy = busyClean || busyAnalyze || busyTrace;
+  const modelLabel =
+  publicConfig.model_label || "OPENROUTER MODEL";
+
+const validatorLabel = (
+  publicConfig.validator || "online"
+).toUpperCase();
+
+const providerLabel = (
+  publicConfig.inference_provider || "OpenRouter"
+).toUpperCase();
   const traceNeedsReview = useMemo(
     () => /Validation Review Required/i.test(traceMd),
     [traceMd]
@@ -164,6 +180,31 @@ export default function Workstation() {
     historyRequestedRef.current = true;
     void loadHistory();
   }, [loadHistory]);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  const loadPublicConfig = async () => {
+    try {
+      const config = await csApi.config();
+
+      if (!cancelled) {
+        setPublicConfig(config);
+      }
+    } catch (error) {
+      console.error(
+        "Unable to load public backend configuration.",
+        error
+      );
+    }
+  };
+
+  void loadPublicConfig();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const resetWorkspace = () => {
     setHistoryId(null);
@@ -761,9 +802,9 @@ Critical values must notify the on-call physician within sixty seconds."`}
               </TabsList>
 
               <div className="cs-results-tabs__engine">
-                <span className="cs-results-tabs__engine-dot" />
-                OPENROUTER / VALIDATED
-              </div>
+  <span className="cs-results-tabs__engine-dot" />
+  {providerLabel} / VALIDATED
+</div>
             </div>
 
             <div className="cs-result-viewport">
@@ -773,11 +814,13 @@ Critical values must notify the on-call physician within sixty seconds."`}
                 data-testid="panel-stories"
               >
                 {busyClean && (
-                  <PipelineLoader
-                    label="Standardising user stories"
-                    stage="02"
-                    testId="loader-stories"
-                  />
+                 <PipelineLoader
+  label="Standardising user stories"
+  stage="02"
+  testId="loader-stories"
+  modelLabel={modelLabel}
+  validatorLabel={validatorLabel}
+/>
                 )}
 
                 {!busyClean && !storiesMd && (
@@ -799,10 +842,12 @@ Critical values must notify the on-call physician within sixty seconds."`}
               >
                 {busyAnalyze && (
                   <PipelineLoader
-                    label="Auditing gaps and conflicts"
-                    stage="03"
-                    testId="loader-gap"
-                  />
+  label="Auditing gaps and conflicts"
+  stage="03"
+  testId="loader-gap"
+  modelLabel={modelLabel}
+  validatorLabel={validatorLabel}
+/>
                 )}
 
                 {!busyAnalyze && !gapMd && (
@@ -824,10 +869,12 @@ Critical values must notify the on-call physician within sixty seconds."`}
               >
                 {busyTrace && (
                   <PipelineLoader
-                    label="Building technical traceability"
-                    stage="04"
-                    testId="loader-trace"
-                  />
+  label="Building technical traceability"
+  stage="04"
+  testId="loader-trace"
+  modelLabel={modelLabel}
+  validatorLabel={validatorLabel}
+/>
                 )}
 
                 {!busyTrace && !traceMd && (
@@ -985,6 +1032,8 @@ function PipelineLoader({
   label,
   stage,
   testId,
+  modelLabel = "OPENROUTER MODEL",
+  validatorLabel = "ONLINE",
 }) {
   return (
     <div
@@ -1039,11 +1088,11 @@ function PipelineLoader({
       </div>
 
       <div className="cs-pipeline-loader__foot">
-        <span>MODEL</span>
-        <strong>OPENAI / GPT-OSS-20B</strong>
-        <span>VALIDATOR</span>
-        <strong>ONLINE</strong>
-      </div>
+  <span>MODEL</span>
+  <strong>{modelLabel}</strong>
+  <span>VALIDATOR</span>
+  <strong>{validatorLabel}</strong>
+</div>
     </div>
   );
 }

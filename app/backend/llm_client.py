@@ -42,7 +42,7 @@ if not OPENROUTER_API_KEY:
 
 MODEL_NAME = os.getenv(
     "OPENROUTER_MODEL",
-    "OPENAI / GPT-OSS-20B : FREE",
+    "openai/gpt-oss-20b:free",
 )
 
 MAX_COMPLETION_TOKENS = int(
