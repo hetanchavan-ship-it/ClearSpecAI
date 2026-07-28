@@ -494,3 +494,13 @@ Database: MongoDB Atlas
 Hetan Chavan
 
 ClearSpec AI was developed as an AI-assisted requirements engineering and technical traceability platform.
+
+---
+
+## License
+
+ClearSpec AI is licensed under the Apache License, Version 2.0.
+
+See the [LICENSE](LICENSE) file for the complete licence terms.
+
+SPDX-License-Identifier: Apache-2.0
