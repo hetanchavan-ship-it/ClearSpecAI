@@ -2,7 +2,7 @@
 import io
 
 from fastapi import HTTPException, UploadFile
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from docx import Document
 
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB

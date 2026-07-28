@@ -1,16 +1,25 @@
-"""ClearSpec AI — FastAPI backend."""
+"""ClearSpec AI - FastAPI backend."""
+
+from contextlib import asynccontextmanager
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, APIRouter
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    UploadFile,
+)
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+
 from config import get_settings
 
 ROOT_DIR = Path(__file__).parent
@@ -46,8 +55,22 @@ db = client[
     settings.db_name
 ]
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """
+    Release shared backend resources when the application shuts down.
+    """
+
+    try:
+        yield
+    finally:
+        client.close()
+
 # ---------- App ----------
-app = FastAPI(title="ClearSpec AI")
+app = FastAPI(
+    title="ClearSpec AI",
+    lifespan=lifespan,
+)
 api = APIRouter(prefix="/api")
 
 
@@ -375,8 +398,3 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
