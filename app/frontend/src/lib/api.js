@@ -7,6 +7,8 @@ export const API = configuredBackendUrl
   ? `${configuredBackendUrl}/api`
   : "/api";
 
+const TRACE_TIMEOUT_MS = 60 * 60 * 1000;
+
 export const api = axios.create({
   baseURL: API,
   timeout: 600000,
@@ -45,7 +47,11 @@ export const csApi = {
     api.post("/analyze", payload).then((response) => response.data),
 
   trace: (payload) =>
-    api.post("/trace", payload).then((response) => response.data),
+  api
+    .post("/trace", payload, {
+      timeout: TRACE_TIMEOUT_MS,
+    })
+    .then((response) => response.data),
 
   history: () =>
     api.get("/history").then((response) => response.data),
