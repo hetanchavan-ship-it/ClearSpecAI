@@ -1075,6 +1075,25 @@ def build_repair_user_message(
 
     mandatory_fixes: list[str] = []
 
+    if "TRACE_SECTION_MISSING" in issue_codes:
+        mandatory_fixes.append(
+            "- Restore every missing mandatory Technical Trace section using "
+            "the exact heading named in the validation issues. Do not rename, "
+            "merge, or omit mandatory sections. Include the exact heading "
+            "'## 2. Story-to-Artifact Traceability Matrix' followed by the "
+            "required seven-column Markdown table."
+        )
+
+    if "TRACE_IDEMPOTENCY_NOT_PERSISTED" in issue_codes:
+        mandatory_fixes.append(
+            "- Persist idempotency in the PostgreSQL schema. Add an "
+            "idempotency_key column to the table that owns the retryable write "
+            "or ingestion request, make it NOT NULL where idempotency is "
+            "required, and enforce an appropriately scoped UNIQUE constraint. "
+            "Keep the API header, schema, pseudocode, and HTTP 409 conflict "
+            "handling consistent."
+        )
+
     if {
         "TRACE_ASSUMPTION_PROMOTED",
         "TRACE_CONFIRMED_SECTION_CONTAMINATED",

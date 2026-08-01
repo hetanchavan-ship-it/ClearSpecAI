@@ -399,7 +399,10 @@ GENERAL RULES
 18. Use parameterised-query pseudocode.
 19. Never concatenate user-controlled values into SQL.
 20. Validate sortable fields through an allowlist.
-21. Include idempotency for retryable write operations.
+21. Include idempotency for retryable write operations. Persist the
+    idempotency key in PostgreSQL and enforce it with an appropriately scoped
+    UNIQUE constraint. Describing an Idempotency-Key header alone is
+    insufficient.
 22. Include timeout, retry, audit, and failure-handling behaviour where
     relevant.
 23. Exception-handling pseudocode must reference variables that actually exist.
@@ -489,6 +492,9 @@ PostgreSQL rules:
 - validate time-relative conditions in application logic or through a
   justified trigger;
 - use UNIQUE constraints where required;
+- whenever a retryable write uses idempotency, persist an idempotency_key in
+  the appropriate request or domain table and enforce an appropriately scoped
+  UNIQUE constraint;
 - use explicit foreign keys;
 - use separate CREATE INDEX statements;
 - do not place INDEX declarations inside CREATE TABLE;

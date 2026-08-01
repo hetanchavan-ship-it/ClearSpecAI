@@ -172,6 +172,64 @@ def test_repair_message_contains_missing_heading() -> None:
     assert "Non-Functional Requirements Missing" in repair_message
 
 
+def test_trace_repair_message_restores_exact_matrix_heading() -> None:
+    result = ValidationResult(stage="trace")
+
+    result.add(
+        "TRACE_SECTION_MISSING",
+        (
+            "Missing required Technical Trace heading: "
+            "'Story-to-Artifact Traceability Matrix'."
+        ),
+    )
+
+    repair_message = build_repair_user_message(
+        stage="trace",
+        original_user_message=(
+            "Produce the Technical Traceability artifacts in the required "
+            "structure."
+        ),
+        invalid_output=(
+            "# Technical Traceability Artifacts\n\n"
+            "Incomplete trace output."
+        ),
+        validation_result=result,
+    )
+
+    assert "## 2. Story-to-Artifact Traceability Matrix" in repair_message
+    assert "Do not rename, merge, or omit mandatory sections." in repair_message
+
+
+def test_trace_repair_message_requires_persisted_idempotency() -> None:
+    result = ValidationResult(stage="trace")
+
+    result.add(
+        "TRACE_IDEMPOTENCY_NOT_PERSISTED",
+        (
+            "Idempotency is described but no idempotency_key is persisted "
+            "in the schema."
+        ),
+    )
+
+    repair_message = build_repair_user_message(
+        stage="trace",
+        original_user_message=(
+            "Produce the Technical Traceability artifacts in the required "
+            "structure."
+        ),
+        invalid_output=(
+            "# Technical Traceability Artifacts\n\n"
+            "The API accepts an Idempotency-Key header."
+        ),
+        validation_result=result,
+    )
+
+    assert "idempotency_key" in repair_message
+    assert "PostgreSQL schema" in repair_message
+    assert "UNIQUE constraint" in repair_message
+    assert "HTTP 409" in repair_message
+
+
 def test_unknown_stage_is_rejected() -> None:
     result = validate_output(
         "unsupported-stage",

@@ -1306,6 +1306,8 @@ def _check_ingest_idempotency_missing(
         "ingestion_requests",
         "lab_ingestion_request",
         "lab_ingestion_requests",
+        "lab_result_ingestion",
+        "lab_result_ingestions",
     )
 
     persisted_key = bool(
