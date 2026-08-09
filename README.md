@@ -158,7 +158,7 @@ The application supports extracting stakeholder content from:
 - Motor
 - MongoDB Atlas
 - OpenAI-compatible Python SDK
-- PyPDF2
+- pypdf
 - python-docx
 - JWT authentication
 
@@ -479,7 +479,7 @@ The deployment is intended as a project demonstration rather than a production s
 ## Project Status
 
 ```text
-Version: 1.0.0
+Version: 1.0.1
 Status: Deployed
 Pipeline: Operational
 Frontend: Live
